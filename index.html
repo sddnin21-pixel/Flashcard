@@ -1,266 +1,591 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crossword Puzzle - Generations</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Crossword Puzzle - Generations</title>
+<style>
+  :root {
+    --cell-size: 28px;
+    --gap: 2px;
+  }
+  @media (max-width: 600px) {
+    :root { --cell-size: 20px; }
+  }
+  @media (max-width: 380px) {
+    :root { --cell-size: 17px; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    overflow-x: hidden;
+  }
+  h1 {
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .subtitle {
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .status {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    padding: 6px 16px;
+    border-radius: 20px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .grid-wrapper {
+    background: #2c3e50;
+    padding: 3px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow-x: auto;
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+  .grid {
+    display: grid;
+    gap: var(--gap);
+    width: fit-content;
+    margin: 0 auto;
+  }
+  .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-radius: 3px;
+    transition: background 0.3s;
+  }
+  .cell.filled {
+    background: #fff;
+    box-shadow: inset 0 0 0 1px #cbd5e0;
+  }
+  .cell .letter {
+    font-size: calc(var(--cell-size) * 0.55);
+    font-weight: 800;
+    color: #2c3e50;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .cell.revealed .letter {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .cell .num {
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: calc(var(--cell-size) * 0.3);
+    font-weight: 700;
+    color: #e74c3c;
+    line-height: 1;
+  }
+  .cell.correct {
+    background: #d4edda !important;
+    animation: pop 0.4s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  .number-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 16px;
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  .num-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: none;
+    background: #fff;
+    color: #2c3e50;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    font-family: inherit;
+  }
+  .num-btn:hover:not(.done) {
+    transform: translateY(-3px);
+    background: #ffd93d;
+  }
+  .num-btn.done {
+    background: #27ae60;
+    color: #fff;
+    cursor: default;
+  }
+  .num-btn.done::after {
+    content: ' ✓';
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px;
+    max-width: 460px;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .modal-overlay.show .modal {
+    transform: scale(1);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .modal-badge {
+    background: #667eea;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 26px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .question-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.45;
+    margin-bottom: 14px;
+  }
+  .options {
+    display: grid;
+    gap: 8px;
+  }
+  .option {
+    padding: 11px 14px;
+    background: #f0f4f8;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: #2c3e50;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(45px);
+    animation: jumpUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .option:nth-child(1) { animation-delay: 0.05s; }
+  .option:nth-child(2) { animation-delay: 0.15s; }
+  .option:nth-child(3) { animation-delay: 0.25s; }
+  .option:nth-child(4) { animation-delay: 0.35s; }
+  @keyframes jumpUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .option .letter-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #667eea;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .option:hover {
+    background: #e1e8f0;
+    border-color: #667eea;
+  }
+  .option.correct {
+    background: #d4edda;
+    border-color: #27ae60;
+    animation: correctPulse 0.6s ease;
+  }
+  .option.correct .letter-badge { background: #27ae60; }
+  .option.wrong {
+    background: #f8d7da;
+    border-color: #e74c3c;
+    animation: shake 0.5s ease;
+  }
+  .option.wrong .letter-badge { background: #e74c3c; }
+  @keyframes correctPulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .feedback {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-align: center;
+    font-size: 13px;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: #d4edda; color: #155724; }
+  .feedback.no { background: #f8d7da; color: #721c24; }
+
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    z-index: 200;
+    animation: fall 1.6s linear forwards;
+    pointer-events: none;
+  }
+  @keyframes fall {
+    to {
+      transform: translateY(105vh) rotate(720deg);
+      opacity: 0;
     }
-    .game-container {
-      background: #fff;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      max-width: 900px;
-      width: 100%;
-    }
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-      margin-bottom: 20px;
-      font-size: 26px;
-    }
-    .grid-container {
-      display: grid;
-      gap: 2px;
-      justify-content: center;
-      margin-bottom: 30px;
-      background: #2c3e50;
-      padding: 2px;
-      border-radius: 8px;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .cell {
-      width: 32px;
-      height: 32px;
-      background: #fff;
-      border: 1px solid #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .cell.empty {
-      background: transparent;
-      border: none;
-    }
-    .cell input {
-      width: 100%;
-      height: 100%;
-      border: none;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      text-transform: uppercase;
-      outline: none;
-      background: transparent;
-      color: #2c3e50;
-    }
-    .cell input:focus {
-      background: #e8f4fd;
-    }
-    .cell input.correct {
-      background: #d4edda;
-      color: #155724;
-    }
-    .cell input.incorrect {
-      background: #f8d7da;
-      color: #721c24;
-    }
-    .clues-container {
-      display: flex;
-      gap: 40px;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
-    .clues-section {
-      flex: 1;
-      min-width: 250px;
-    }
-    .clues-section h3 {
-      color: #2c3e50;
-      margin-bottom: 12px;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 8px;
-      font-size: 18px;
-    }
-    .clues-section ul {
-      list-style: none;
-      padding: 0;
-    }
-    .clues-section li {
-      margin-bottom: 12px;
-      line-height: 1.5;
-      color: #444;
-      font-size: 15px;
-    }
-    .controls {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    button {
-      padding: 12px 28px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    #checkBtn { background: #3498db; color: white; }
-    #revealBtn { background: #e74c3c; color: white; }
-    #resetBtn { background: #95a5a6; color: white; }
-  </style>
+  }
+
+  .win-banner {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 20px;
+  }
+  .win-banner.show { display: flex; }
+  .win-content {
+    background: linear-gradient(135deg, #ffd93d, #ff6b6b);
+    padding: 30px 24px;
+    border-radius: 24px;
+    text-align: center;
+    color: #fff;
+    max-width: 380px;
+    animation: pop 0.5s ease;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+  }
+  .win-content h2 { font-size: 26px; margin-bottom: 8px; }
+  .win-content p { font-size: 15px; margin-bottom: 20px; }
+  .win-content button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 12px;
+    background: #fff;
+    color: #e74c3c;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+</style>
 </head>
 <body>
 
-<div class="game-container">
-  <h1>🧩 Crossword Puzzle: Generations</h1>
-  <div class="grid-container" id="gridContainer"></div>
-  
-  <div class="clues-container">
-    <div class="clues-section">
-      <h3>Across</h3>
-      <ul id="acrossClues"></ul>
-    </div>
-    <div class="clues-section">
-      <h3>Down</h3>
-      <ul id="downClues"></ul>
-    </div>
-  </div>
+<h1>🧩 Crossword Puzzle</h1>
+<p class="subtitle">Tap a number, answer the question, fill the crossword!</p>
+<div class="status" id="status">Solved: 0 / 10</div>
 
-  <div class="controls">
-    <button id="checkBtn">Check Answers</button>
-    <button id="revealBtn">Reveal Answers</button>
-    <button id="resetBtn">Reset</button>
+<div class="grid-wrapper">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="number-bar" id="numberBar"></div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-badge" id="modalBadge">Question</span>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="question-text" id="questionText"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<div class="win-banner" id="winBanner">
+  <div class="win-content">
+    <h2>🎉 You Win!</h2>
+    <p>You completed the crossword!</p>
+    <button onclick="resetGame()">Play Again</button>
   </div>
 </div>
 
 <script>
-  // Dữ liệu câu hỏi và đáp án (Dựa theo hình ảnh)
-  const words = [
-    { id: 1, direction: 'across', row: 3, col: 0, answer: 'LIFEEXPECTANCY', clue: 'The number of years that a person is likely to live' },
-    { id: 2, direction: 'down', row: 0, col: 1, answer: 'NUTRIENTS', clue: 'Things to keep a living thing alive and help it grow' },
-    { id: 3, direction: 'down', row: 0, col: 2, answer: 'WORKOUT', clue: 'Do physical exercise' },
-    { id: 4, direction: 'down', row: 0, col: 3, answer: 'HEALTHYHABITS', clue: 'Start by looking at food labels, paying attention to ingredients and nutrients, such as vitamins' }
-  ];
+// ==== DATA ====
+const words = [
+  { id: 1, direction: 'across', row: 2, col: 1, answer: 'HEALTHY',
+    question: 'Which word means "in good physical condition"?',
+    options: ['Healthy', 'Sick', 'Lazy', 'Sleepy'], correct: 0 },
+  { id: 2, direction: 'down', row: 2, col: 1, answer: 'HABITS',
+    question: 'What do we call things you do regularly, often without thinking?',
+    options: ['Hobbies', 'Habits', 'Holidays', 'Hopes'], correct: 1 },
+  { id: 3, direction: 'down', row: 2, col: 5, answer: 'TEAMWORK',
+    question: 'What do we call working together with others to achieve a goal?',
+    options: ['Teamwork', 'Homework', 'Network', 'Framework'], correct: 0 },
+  { id: 4, direction: 'across', row: 4, col: 2, answer: 'VITAMINS',
+    question: 'Which nutrients help your body grow and stay healthy?',
+    options: ['Sugar', 'Salt', 'Vitamins', 'Fat'], correct: 2 },
+  { id: 5, direction: 'across', row: 5, col: 6, answer: 'LIFESTYLE',
+    question: 'What do we call the way a person lives, including habits and choices?',
+    options: ['Lifeguard', 'Lifestyle', 'Lifetime', 'Lifeboat'], correct: 1 },
+  { id: 6, direction: 'down', row: 6, col: 5, answer: 'WORKOUT',
+    question: 'What do we call physical exercise to stay fit?',
+    options: ['Workout', 'Walkout', 'Washout', 'Watch out'], correct: 0 },
+  { id: 7, direction: 'across', row: 6, col: 6, answer: 'DIGITAL',
+    question: 'Which word relates to computer technology?',
+    options: ['Digital', 'Manual', 'Natural', 'Physical'], correct: 0 },
+  { id: 8, direction: 'across', row: 8, col: 6, answer: 'NUTRIENTS',
+    question: 'What substances in food does your body need to survive and grow?',
+    options: ['Nutrients', 'Chemicals', 'Colors', 'Sounds'], correct: 0 },
+  { id: 9, direction: 'across', row: 10, col: 6, answer: 'CURIOUS',
+    question: 'Which word means "wanting to know or learn something"?',
+    options: ['Furious', 'Curious', 'Serious', 'Dangerous'], correct: 1 },
+  { id: 10, direction: 'across', row: 12, col: 6, answer: 'CREATIVE',
+    question: 'Which word means "having good imagination or original ideas"?',
+    options: ['Creative', 'Reactive', 'Passive', 'Negative'], correct: 0 }
+];
 
-  const gridSize = 15;
-  const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(null));
+// ==== BUILD CELL MAP ====
+const cellMap = {};
+words.forEach(w => {
+  for (let i = 0; i < w.answer.length; i++) {
+    const r = w.direction === 'across' ? w.row : w.row + i;
+    const c = w.direction === 'across' ? w.col + i : w.col;
+    const key = r + ',' + c;
+    if (!cellMap[key]) cellMap[key] = { letter: w.answer[i], wordIds: [] };
+    cellMap[key].wordIds.push(w.id);
+  }
+});
 
-  // Đặt từ vào lưới
-  words.forEach(word => {
-    for (let i = 0; i < word.answer.length; i++) {
-      const r = word.direction === 'across' ? word.row : word.row + i;
-      const c = word.direction === 'across' ? word.col + i : word.col;
-      if (r < gridSize && c < gridSize) {
-        if (!grid[r][c]) {
-          grid[r][c] = { letter: word.answer[i], wordIds: [word.id] };
-        } else {
-          grid[r][c].wordIds.push(word.id);
-        }
+// ==== BOUNDING BOX ====
+let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity;
+for (const key in cellMap) {
+  const [r, c] = key.split(',').map(Number);
+  if (r < minR) minR = r;
+  if (r > maxR) maxR = r;
+  if (c < minC) minC = c;
+  if (c > maxC) maxC = c;
+}
+const totalRows = maxR - minR + 1;
+const totalCols = maxC - minC + 1;
+
+// ==== RENDER GRID ====
+const gridEl = document.getElementById('grid');
+gridEl.style.gridTemplateColumns = `repeat(${totalCols}, var(--cell-size))`;
+for (let r = 0; r < totalRows; r++) {
+  for (let c = 0; c < totalCols; c++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const key = (r + minR) + ',' + (c + minC);
+    if (cellMap[key]) {
+      cell.classList.add('filled');
+      cell.dataset.key = key;
+      cell.dataset.letter = cellMap[key].letter;
+      const letterEl = document.createElement('span');
+      letterEl.className = 'letter';
+      letterEl.textContent = cellMap[key].letter;
+      cell.appendChild(letterEl);
+      // Number label (first word starting here)
+      const startWords = words.filter(w => w.row === r + minR && w.col === c + minC);
+      if (startWords.length > 0) {
+        const numEl = document.createElement('span');
+        numEl.className = 'num';
+        numEl.textContent = startWords[0].id;
+        cell.appendChild(numEl);
       }
     }
+    gridEl.appendChild(cell);
+  }
+}
+
+// ==== RENDER NUMBER BUTTONS ====
+const solved = new Set();
+const numberBar = document.getElementById('numberBar');
+words.forEach(w => {
+  const btn = document.createElement('button');
+  btn.className = 'num-btn';
+  btn.textContent = w.id;
+  btn.dataset.id = w.id;
+  btn.onclick = () => openQuestion(w.id);
+  numberBar.appendChild(btn);
+});
+
+// ==== MODAL LOGIC ====
+const modalEl = document.getElementById('modal');
+const modalBadge = document.getElementById('modalBadge');
+const questionText = document.getElementById('questionText');
+const optionsEl = document.getElementById('options');
+const feedback = document.getElementById('feedback');
+const statusEl = document.getElementById('status');
+
+function openQuestion(id) {
+  if (solved.has(id)) return;
+  const w = words.find(x => x.id === id);
+  modalBadge.textContent = 'Question ' + id;
+  questionText.textContent = w.question;
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  optionsEl.innerHTML = '';
+  w.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = `<span class="letter-badge">${String.fromCharCode(65 + i)}</span><span>${opt}</span>`;
+    btn.onclick = () => answerQuestion(w, btn, i);
+    optionsEl.appendChild(btn);
   });
+  void optionsEl.offsetWidth; // force reflow for animation
+  modalEl.classList.add('show');
+}
 
-  // Tạo HTML cho lưới ô chữ
-  const gridContainer = document.getElementById('gridContainer');
-  gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 32px)`;
+function answerQuestion(w, btn, chosen) {
+  [...optionsEl.children].forEach(b => b.onclick = null);
+  if (chosen === w.correct) {
+    btn.classList.add('correct');
+    feedback.className = 'feedback show ok';
+    feedback.textContent = '✅ Correct! Filling in the crossword...';
+    setTimeout(() => {
+      fillWord(w);
+      solved.add(w.id);
+      document.querySelector(`.num-btn[data-id="${w.id}"]`).classList.add('done');
+      updateStatus();
+      fireConfetti();
+      closeModal();
+      checkWin();
+    }, 900);
+  } else {
+    btn.classList.add('wrong');
+    optionsEl.children[w.correct].classList.add('correct');
+    feedback.className = 'feedback show no';
+    feedback.textContent = '❌ Wrong! Someone else can try...';
+    setTimeout(() => closeModal(), 1600);
+  }
+}
 
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      if (grid[r][c]) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.maxLength = 1;
-        input.dataset.row = r;
-        input.dataset.col = c;
-        input.dataset.letter = grid[r][c].letter;
-        input.dataset.wordIds = grid[r][c].wordIds.join(',');
-        cell.appendChild(input);
-      } else {
-        cell.classList.add('empty');
-      }
-      gridContainer.appendChild(cell);
+function fillWord(w) {
+  for (let i = 0; i < w.answer.length; i++) {
+    const r = w.direction === 'across' ? w.row : w.row + i;
+    const c = w.direction === 'across' ? w.col + i : w.col;
+    const cell = document.querySelector(`.cell[data-key="${r},${c}"]`);
+    if (cell) {
+      setTimeout(() => {
+        cell.classList.add('revealed', 'correct');
+      }, i * 80);
     }
   }
+}
 
-  // Tạo danh sách gợi ý
-  const acrossClues = document.getElementById('acrossClues');
-  const downClues = document.getElementById('downClues');
+function closeModal() {
+  modalEl.classList.remove('show');
+}
 
-  words.forEach(word => {
-    const li = document.createElement('li');
-    li.textContent = `${word.id}. ${word.clue} (${word.answer.length} letters)`;
-    if (word.direction === 'across') {
-      acrossClues.appendChild(li);
-    } else {
-      downClues.appendChild(li);
-    }
-  });
+function updateStatus() {
+  statusEl.textContent = `Solved: ${solved.size} / ${words.length}`;
+}
 
-  // Tự động chuyển sang ô tiếp theo khi gõ
-  gridContainer.addEventListener('input', (e) => {
-    if (e.target.tagName === 'INPUT') {
-      e.target.value = e.target.value.toUpperCase();
-      const inputs = Array.from(gridContainer.querySelectorAll('input'));
-      const index = inputs.indexOf(e.target);
-      if (index < inputs.length - 1) {
-        inputs[index + 1].focus();
-      }
-    }
-  });
+function checkWin() {
+  if (solved.size === words.length) {
+    setTimeout(() => {
+      document.getElementById('winBanner').classList.add('show');
+    }, 1000);
+  }
+}
 
-  // Nút kiểm tra đáp án
-  document.getElementById('checkBtn').addEventListener('click', () => {
-    const inputs = gridContainer.querySelectorAll('input');
-    inputs.forEach(input => {
-      if (input.value === input.dataset.letter) {
-        input.classList.add('correct');
-        input.classList.remove('incorrect');
-      } else {
-        input.classList.add('incorrect');
-        input.classList.remove('correct');
-      }
-    });
-  });
+function resetGame() {
+  solved.clear();
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('revealed', 'correct'));
+  document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('done'));
+  document.getElementById('winBanner').classList.remove('show');
+  updateStatus();
+}
 
-  // Nút hiện đáp án
-  document.getElementById('revealBtn').addEventListener('click', () => {
-    const inputs = gridContainer.querySelectorAll('input');
-    inputs.forEach(input => {
-      input.value = input.dataset.letter;
-      input.classList.remove('correct', 'incorrect');
-    });
-  });
+// ==== CONFETTI ====
+function fireConfetti() {
+  const colors = ['#ffd93d', '#ff6b6b', '#4ecdc4', '#a78bfa', '#34d399', '#f472b6'];
+  for (let i = 0; i < 35; i++) {
+    const conf = document.createElement('div');
+    conf.className = 'confetti';
+    conf.style.left = Math.random() * 100 + 'vw';
+    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+    conf.style.animationDelay = Math.random() * 0.3 + 's';
+    conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    conf.style.width = (6 + Math.random() * 8) + 'px';
+    conf.style.height = conf.style.width;
+    document.body.appendChild(conf);
+    setTimeout(() => conf.remove(), 2200);
+  }
+}
 
-  // Nút làm lại
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    const inputs = gridContainer.querySelectorAll('input');
-    inputs.forEach(input => {
-      input.value = '';
-      input.classList.remove('correct', 'incorrect');
-    });
-  });
+// ==== CLOSE ON OVERLAY CLICK ====
+modalEl.addEventListener('click', (e) => {
+  if (e.target === modalEl) closeModal();
+});
 </script>
 </body>
 </html>
