@@ -1,731 +1,3173 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ô chữ - Different Generations</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Windows 11 — Web Simulator</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ============================================================
+   RESET & BIẾN TOÀN CỤC
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#0078d4;
+  --glass:rgba(243,243,243,.82);
+  --solid:#f3f3f3;
+  --win:#f9f9f9;
+  --win2:#efefef;
+  --text:#1b1b1b;
+  --dim:#616161;
+  --line:rgba(0,0,0,.09);
+  --hover:rgba(0,0,0,.055);
+  --active:rgba(0,0,0,.09);
+  --shadow:0 12px 40px rgba(0,0,0,.28),0 2px 8px rgba(0,0,0,.14);
+  --radius:8px;
+}
+body.dark{
+  --glass:rgba(32,32,32,.82);
+  --solid:#202020;
+  --win:#202020;
+  --win2:#2b2b2b;
+  --text:#f2f2f2;
+  --dim:#a8a8a8;
+  --line:rgba(255,255,255,.09);
+  --hover:rgba(255,255,255,.06);
+  --active:rgba(255,255,255,.1);
+  --shadow:0 12px 40px rgba(0,0,0,.65),0 2px 8px rgba(0,0,0,.4);
+}
+html,body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:14px;color:var(--text);background:#000;
+  user-select:none;-webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,textarea{font-family:inherit;font-size:inherit;color:inherit;user-select:text}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(128,128,128,.45);border-radius:6px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.75);background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
 
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f9f9f9;
-    color: #000;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 14px 10px 30px;
-  }
+/* ============================================================
+   MÀN HÌNH KHỞI ĐỘNG
+   ============================================================ */
+#boot{
+  position:fixed;inset:0;background:#000;z-index:100000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:50px;
+  transition:opacity .7s ease;
+}
+#boot.hide{opacity:0;pointer-events:none}
+.boot-logo{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;width:92px;height:92px}
+.boot-logo i{background:#4cc2ff;border-radius:4px;animation:logoIn .9s cubic-bezier(.2,.8,.3,1) both}
+.boot-logo i:nth-child(1){animation-delay:.05s}
+.boot-logo i:nth-child(2){animation-delay:.15s}
+.boot-logo i:nth-child(3){animation-delay:.25s}
+.boot-logo i:nth-child(4){animation-delay:.35s}
+@keyframes logoIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.boot-spinner{
+  width:34px;height:34px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.14);border-top-color:#fff;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-text{position:absolute;bottom:70px;color:#8a8a8a;font-size:13px;letter-spacing:.5px}
 
-  h1 {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 4px;
-    text-align: center;
-    font-family: 'Times New Roman', Times, serif;
-  }
+/* ============================================================
+   MÀN HÌNH KHÓA / ĐĂNG NHẬP
+   ============================================================ */
+#lock{
+  position:fixed;inset:0;z-index:90000;color:#fff;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  background-size:cover;background-position:center;
+  transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .6s;
+}
+#lock.hide{transform:translateY(-100%);opacity:0;pointer-events:none}
+.lock-time{font-size:110px;font-weight:200;line-height:1;letter-spacing:-3px;text-shadow:0 4px 30px rgba(0,0,0,.5)}
+.lock-date{font-size:26px;font-weight:300;margin-top:10px;opacity:.95;text-shadow:0 2px 16px rgba(0,0,0,.5)}
+.lock-hint{position:absolute;bottom:60px;font-size:14px;opacity:.85;animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+.lock-login{display:flex;flex-direction:column;align-items:center;gap:16px;animation:winIn .35s ease-out}
+.lock-avatar{
+  width:110px;height:110px;border-radius:50%;
+  background:linear-gradient(135deg,#4cc2ff,#0078d4);
+  display:grid;place-items:center;font-size:52px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);
+}
+.lock-name{font-size:24px;font-weight:400}
+.lock-btn{
+  padding:10px 44px;border-radius:4px;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(10px);
+  font-size:14px;transition:.15s;
+}
+.lock-btn:hover{background:rgba(255,255,255,.28)}
 
-  .subtitle {
-    font-size: 13px;
-    color: #333;
-    margin-bottom: 14px;
-    text-align: center;
-  }
+/* ============================================================
+   DESKTOP
+   ============================================================ */
+#desktop{
+  position:fixed;inset:0 0 48px 0;overflow:hidden;
+  background-size:cover;background-position:center;
+  transition:background-image .45s ease;
+}
+#desktop-icons{
+  position:absolute;inset:8px;
+  display:grid;grid-auto-flow:column;
+  grid-template-rows:repeat(auto-fill,96px);
+  grid-auto-columns:90px;gap:2px;
+  align-content:start;justify-content:start;
+}
+.dicon{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  border-radius:6px;padding:6px 4px;border:1px solid transparent;
+  cursor:default;text-align:center;transition:background .1s;
+}
+.dicon .em{font-size:34px;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45))}
+.dicon .lb{
+  font-size:11.5px;color:#fff;line-height:1.25;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  word-break:break-word;
+}
+.dicon:hover{background:rgba(255,255,255,.13)}
+.dicon.sel{background:rgba(0,120,212,.45);border-color:rgba(140,205,255,.65)}
 
-  .status {
-    font-size: 13px;
-    margin-bottom: 12px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #000;
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-  }
+/* ============================================================
+   CỬA SỔ
+   ============================================================ */
+#windows-layer{position:absolute;inset:0;pointer-events:none}
+.window{
+  position:absolute;pointer-events:auto;
+  display:flex;flex-direction:column;
+  background:var(--win);border:1px solid var(--line);border-radius:8px;
+  box-shadow:var(--shadow);overflow:hidden;
+  min-width:300px;min-height:170px;
+  animation:winIn .16s ease-out;
+}
+@keyframes winIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.window.min{display:none}
+.window.max{border-radius:0}
+.window.focused{box-shadow:0 22px 64px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.05)}
+.titlebar{
+  height:38px;flex:0 0 38px;display:flex;align-items:center;gap:9px;
+  padding-left:13px;cursor:default;background:var(--win);
+}
+.tb-icon{font-size:15px;line-height:1}
+.tb-title{flex:1;font-size:12.5px;font-weight:600;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-controls{display:flex;height:100%}
+.tb-controls button{
+  width:46px;height:100%;display:grid;place-items:center;
+  transition:background .12s;color:var(--text);
+}
+.tb-controls button:hover{background:var(--hover)}
+.tb-controls .close:hover{background:#e81123;color:#fff}
+.win-body{flex:1;overflow:auto;position:relative;background:var(--win)}
+.rz{position:absolute;z-index:6}
+.rz-n{top:-3px;left:10px;right:10px;height:6px;cursor:ns-resize}
+.rz-s{bottom:-3px;left:10px;right:10px;height:6px;cursor:ns-resize}
+.rz-w{left:-3px;top:10px;bottom:10px;width:6px;cursor:ew-resize}
+.rz-e{right:-3px;top:10px;bottom:10px;width:6px;cursor:ew-resize}
+.rz-nw{top:-3px;left:-3px;width:13px;height:13px;cursor:nwse-resize}
+.rz-ne{top:-3px;right:-3px;width:13px;height:13px;cursor:nesw-resize}
+.rz-sw{bottom:-3px;left:-3px;width:13px;height:13px;cursor:nesw-resize}
+.rz-se{bottom:-3px;right:-3px;width:13px;height:13px;cursor:nwse-resize}
 
-  /* ===== BẢNG Ô CHỮ ===== */
-  .board-wrap {
-    background: #fff;
-    border: 2px solid #000;
-    padding: 6px;
-    margin-bottom: 16px;
-    max-width: 100%;
-    overflow-x: auto;
-  }
+#snap-preview{
+  position:fixed;z-index:9998;border:2px solid var(--accent);
+  background:rgba(0,120,212,.22);border-radius:8px;
+  pointer-events:none;opacity:0;transition:all .13s ease;
+}
+#snap-preview.on{opacity:1}
 
-  .grid {
-    display: grid;
-    gap: 1px;
-    width: fit-content;
-    margin: 0 auto;
-  }
+/* ============================================================
+   TASKBAR
+   ============================================================ */
+#taskbar{
+  position:fixed;left:0;right:0;bottom:0;height:48px;z-index:10000;
+  display:flex;align-items:center;
+  background:var(--glass);
+  backdrop-filter:blur(34px) saturate(1.6);
+  -webkit-backdrop-filter:blur(34px) saturate(1.6);
+  border-top:1px solid var(--line);
+}
+.tb-center{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:5px;
+}
+.tb-right{
+  position:absolute;right:0;height:100%;
+  display:flex;align-items:center;gap:2px;padding-right:6px;
+}
+.tbtn{
+  position:relative;width:42px;height:40px;border-radius:6px;
+  display:grid;place-items:center;font-size:20px;
+  transition:background .12s;
+}
+.tbtn:hover{background:var(--hover)}
+.tbtn:active{transform:scale(.94)}
+.tbtn.run::after{
+  content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  width:16px;height:3px;border-radius:2px;background:var(--accent);
+  transition:width .2s;
+}
+.tbtn.act::after{width:24px}
+.tray{
+  display:flex;align-items:center;gap:10px;height:36px;
+  padding:0 10px;border-radius:6px;font-size:13px;transition:background .12s;
+}
+.tray:hover{background:var(--hover)}
+.tray .col{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;font-size:12px}
+.tray-icons{display:flex;gap:7px;font-size:14px;opacity:.9}
+#bell{width:34px;height:36px;border-radius:6px;display:grid;place-items:center;font-size:15px}
+#bell:hover{background:var(--hover)}
 
-  .cell {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    background: #fff;
-    border: 1px solid #000;
-    font-family: Arial, sans-serif;
-    font-size: 15px;
-    font-weight: bold;
-    text-transform: uppercase;
-    transition: background 0.3s;
-  }
+/* ============================================================
+   START MENU
+   ============================================================ */
+#start{
+  position:fixed;left:50%;bottom:56px;z-index:9997;
+  width:640px;height:680px;max-height:calc(100vh - 80px);
+  transform:translateX(-50%) translateY(24px) scale(.98);
+  background:var(--glass);
+  backdrop-filter:blur(44px) saturate(1.7);
+  -webkit-backdrop-filter:blur(44px) saturate(1.7);
+  border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s cubic-bezier(.2,.9,.3,1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#start.open{opacity:1;transform:translateX(-50%) translateY(0) scale(1);pointer-events:auto}
+.start-search{
+  margin:22px 22px 8px;height:38px;flex:0 0 38px;
+  display:flex;align-items:center;gap:9px;padding:0 14px;
+  background:var(--win);border:1px solid var(--line);border-radius:20px;
+}
+.start-search input{flex:1;background:none;border:none;outline:none;font-size:13.5px}
+.start-scroll{flex:1;overflow-y:auto;padding:6px 22px 0}
+.start-sec{display:flex;align-items:center;justify-content:space-between;margin:14px 4px 10px}
+.start-sec h3{font-size:13px;font-weight:600}
+.start-sec button{font-size:12px;padding:5px 12px;border-radius:4px;background:var(--hover)}
+.pin-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.pin{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:14px 4px 10px;border-radius:6px;transition:background .12s;text-align:center;
+}
+.pin:hover{background:var(--hover)}
+.pin .em{font-size:30px;line-height:1}
+.pin .lb{font-size:11.5px;line-height:1.2;opacity:.92;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rec-list{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.rec{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;transition:background .12s;text-align:left;
+}
+.rec:hover{background:var(--hover)}
+.rec .em{font-size:24px}
+.rec .tx{display:flex;flex-direction:column;line-height:1.3;overflow:hidden}
+.rec .tx b{font-size:12.5px;font-weight:600}
+.rec .tx span{font-size:11px;color:var(--dim)}
+.start-foot{
+  flex:0 0 56px;margin-top:8px;padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(128,128,128,.09);border-top:1px solid var(--line);
+}
+.start-user{display:flex;align-items:center;gap:11px;font-size:13px;font-weight:500;padding:6px 10px;border-radius:6px}
+.start-user:hover{background:var(--hover)}
+.start-user .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#4cc2ff,#0078d4);display:grid;place-items:center;font-size:15px}
+#powerBtn{width:36px;height:36px;border-radius:6px;display:grid;place-items:center;font-size:16px}
+#powerBtn:hover{background:var(--hover)}
 
-  .cell.empty {
-    border: none;
-    background: transparent;
-  }
+/* ============================================================
+   BẢNG NỔI (Quick settings / Lịch / Task view / Thông báo)
+   ============================================================ */
+.panel{
+  position:fixed;z-index:9996;
+  background:var(--glass);
+  backdrop-filter:blur(44px) saturate(1.7);
+  -webkit-backdrop-filter:blur(44px) saturate(1.7);
+  border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transform:translateY(16px) scale(.98);
+  transition:opacity .18s,transform .18s cubic-bezier(.2,.9,.3,1);
+}
+.panel.open{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+#quick{right:12px;bottom:56px;width:340px;padding:18px}
+.qs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qs{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:14px 6px;border-radius:8px;background:var(--hover);font-size:11px;
+  transition:.15s;border:1px solid transparent;
+}
+.qs:hover{background:var(--active)}
+.qs .ic{font-size:18px}
+.qs.on{background:var(--accent);color:#fff;border-color:transparent}
+.qs.on .ic{filter:brightness(1.2)}
+.qs-slider{margin-top:16px}
+.qs-slider label{display:flex;align-items:center;gap:10px;font-size:12px;margin-bottom:12px}
+.qs-slider input[type=range]{flex:1;accent-color:var(--accent);height:4px}
+#calendar{right:12px;bottom:56px;width:360px;padding:18px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-head b{font-size:14px}
+.cal-nav{display:flex;gap:4px}
+.cal-nav button{width:28px;height:28px;border-radius:5px;display:grid;place-items:center}
+.cal-nav button:hover{background:var(--hover)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-grid .wd{font-size:11px;color:var(--dim);padding:6px 0;font-weight:600}
+.cal-grid .d{font-size:12.5px;padding:7px 0;border-radius:50%;cursor:pointer;transition:.1s}
+.cal-grid .d:hover{background:var(--hover)}
+.cal-grid .d.other{opacity:.32}
+.cal-grid .d.today{background:var(--accent);color:#fff;font-weight:700}
+.cal-news{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--dim);line-height:1.6}
+#taskview{
+  position:fixed;inset:0 0 48px 0;z-index:9995;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(24px);
+  display:flex;align-items:center;justify-content:center;gap:26px;flex-wrap:wrap;
+  padding:60px;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+#taskview.open{opacity:1;pointer-events:auto}
+.tv-card{
+  width:280px;height:190px;border-radius:10px;overflow:hidden;
+  background:var(--win);border:1px solid var(--line);
+  box-shadow:0 14px 44px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
+}
+.tv-card:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 22px 60px rgba(0,0,0,.65)}
+.tv-head{height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:12px;background:var(--win2)}
+.tv-body{flex:1;display:grid;place-items:center;font-size:44px;opacity:.4}
+.tv-close{
+  position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:4px;
+  display:grid;place-items:center;font-size:11px;background:rgba(0,0,0,.1);
+}
+.tv-close:hover{background:#e81123;color:#fff}
+.tv-wrap{position:relative}
 
-  .cell .num {
-    position: absolute;
-    top: 0;
-    left: 1px;
-    font-size: 8px;
-    font-weight: normal;
-    color: #000;
-    font-family: Arial, sans-serif;
-    line-height: 1;
-  }
+/* ============================================================
+   MENU CHUỘT PHẢI
+   ============================================================ */
+#ctxmenu{
+  position:fixed;z-index:20000;min-width:230px;padding:6px;
+  background:var(--glass);backdrop-filter:blur(40px) saturate(1.7);
+  -webkit-backdrop-filter:blur(40px) saturate(1.7);
+  border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transform:scale(.97);transform-origin:top left;
+  transition:opacity .1s,transform .1s;
+}
+#ctxmenu.open{opacity:1;pointer-events:auto;transform:scale(1)}
+.ctx-item{
+  display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:5px;
+  font-size:13px;transition:background .1s;width:100%;text-align:left;
+}
+.ctx-item:hover{background:var(--hover)}
+.ctx-item .ic{width:18px;text-align:center;font-size:14px;opacity:.85}
+.ctx-sep{height:1px;background:var(--line);margin:5px 10px}
 
-  .cell .letter {
-    opacity: 0;
-    transform: scale(0.2);
-    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toasts{position:fixed;right:14px;bottom:60px;z-index:19000;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{
+  min-width:260px;max-width:340px;padding:14px 16px;
+  background:var(--glass);backdrop-filter:blur(34px) saturate(1.6);
+  -webkit-backdrop-filter:blur(34px) saturate(1.6);
+  border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+  font-size:13px;line-height:1.45;
+  animation:toastIn .25s cubic-bezier(.2,.9,.3,1);
+}
+.toast b{display:block;font-size:12.5px;margin-bottom:3px}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.toast.out{opacity:0;transform:translateX(40px);transition:.3s}
 
-  .cell.revealed .letter {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* ============================================================
+   STYLE DÙNG CHUNG CHO ỨNG DỤNG
+   ============================================================ */
+.app-toolbar{
+  display:flex;align-items:center;gap:6px;padding:8px 12px;
+  border-bottom:1px solid var(--line);background:var(--win2);flex-wrap:wrap;
+}
+.app-btn{
+  padding:6px 12px;border-radius:5px;font-size:12.5px;transition:background .12s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.app-btn:hover{background:var(--hover)}
+.app-btn.primary{background:var(--accent);color:#fff}
+.app-btn.primary:hover{filter:brightness(1.12)}
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:12px;color:var(--dim);font-size:13px;text-align:center;padding:30px;
+}
+.empty-state .big{font-size:52px;opacity:.35}
 
-  .cell.keyword-col {
-    background: #ffff00;
-  }
+/* ---------- NOTEPAD ---------- */
+.np-bar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--win2)}
+.np-btn{padding:6px 11px;border-radius:5px;font-size:12.5px}
+.np-btn:hover{background:var(--hover)}
+.np-info{margin-left:auto;font-size:11.5px;color:var(--dim)}
+.np-text{
+  width:100%;height:100%;border:none;outline:none;resize:none;
+  padding:16px 18px;background:transparent;line-height:1.65;
+  font-family:"Cascadia Code",Consolas,"Courier New",monospace;font-size:14px;
+}
+.win-body:has(.np-bar){display:flex;flex-direction:column;overflow:hidden}
 
-  .cell.revealed.keyword-col {
-    background: #ffff00;
-  }
+/* ---------- CALCULATOR ---------- */
+.calc{display:flex;flex-direction:column;height:100%;padding:10px;gap:10px}
+.calc-disp{
+  padding:16px 18px 12px;text-align:right;border-radius:8px;background:var(--win2);
+  display:flex;flex-direction:column;justify-content:flex-end;min-height:110px;
+}
+.calc-hist{font-size:12px;color:var(--dim);min-height:16px;word-break:break-all}
+.calc-main{font-size:38px;font-weight:300;word-break:break-all;line-height:1.15}
+.calc-keys{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.calc-keys button{
+  border-radius:7px;background:var(--win2);font-size:17px;transition:.1s;
+  display:grid;place-items:center;
+}
+.calc-keys button:hover{background:var(--hover)}
+.calc-keys button:active{transform:scale(.95)}
+.calc-keys .op{background:rgba(128,128,128,.14)}
+.calc-keys .eq{background:var(--accent);color:#fff}
+.calc-keys .eq:hover{filter:brightness(1.15)}
 
-  .cell.correct-highlight {
-    background: #ffff00 !important;
-  }
+/* ---------- FILE EXPLORER ---------- */
+.fe{display:flex;height:100%;overflow:hidden}
+.fe-side{
+  width:190px;flex:0 0 190px;padding:10px 8px;overflow-y:auto;
+  border-right:1px solid var(--line);background:var(--win2);
+}
+.fe-side h4{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);padding:8px 10px 5px}
+.fe-nav{
+  display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:6px;
+  font-size:13px;transition:background .12s;width:100%;text-align:left;
+}
+.fe-nav:hover{background:var(--hover)}
+.fe-nav.on{background:var(--active);font-weight:600}
+.fe-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.fe-top{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.fe-navbtn{width:30px;height:30px;border-radius:5px;display:grid;place-items:center;font-size:14px}
+.fe-navbtn:hover{background:var(--hover)}
+.fe-navbtn:disabled{opacity:.3;cursor:default}
+.fe-crumb{
+  flex:1;height:32px;display:flex;align-items:center;gap:2px;padding:0 10px;
+  background:var(--win2);border:1px solid var(--line);border-radius:5px;
+  font-size:12.5px;overflow:hidden;
+}
+.fe-crumb span{padding:3px 6px;border-radius:4px;cursor:pointer;white-space:nowrap}
+.fe-crumb span:hover{background:var(--hover)}
+.fe-crumb i{opacity:.5;font-style:normal}
+.fe-items{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;align-content:start}
+.fe-item{
+  display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px;
+  border-radius:6px;text-align:center;transition:background .1s;
+}
+.fe-item:hover{background:var(--hover)}
+.fe-item.sel{background:rgba(0,120,212,.22)}
+.fe-item .em{font-size:34px;line-height:1}
+.fe-item .nm{font-size:11.5px;line-height:1.25;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.fe-status{height:26px;display:flex;align-items:center;padding:0 12px;font-size:11.5px;color:var(--dim);border-top:1px solid var(--line);background:var(--win2)}
 
-  /* ===== NÚT SỐ ===== */
-  .number-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    justify-content: center;
-    margin-bottom: 12px;
-    max-width: 400px;
-  }
+/* ---------- TERMINAL ---------- */
+.term{
+  height:100%;padding:12px 14px;overflow-y:auto;background:#0c0c0c;color:#cccccc;
+  font-family:"Cascadia Code",Consolas,"Courier New",monospace;font-size:13px;line-height:1.5;
+}
+.term .ok{color:#16c60c}
+.term .err{color:#e74856}
+.term .info{color:#3b78ff}
+.term .warn{color:#f9f1a5}
+.term-line{display:flex;gap:8px;align-items:center;margin-top:2px}
+.term-prompt{color:#16c60c;white-space:nowrap}
+.term-in{flex:1;background:none;border:none;outline:none;color:#cccccc;font-family:inherit;font-size:inherit}
 
-  .num-btn {
-    width: 36px;
-    height: 36px;
-    border: 1px solid #000;
-    background: #fff;
-    color: #000;
-    font-size: 15px;
-    font-weight: bold;
-    font-family: Arial, sans-serif;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
+/* ---------- SETTINGS ---------- */
+.set{display:flex;height:100%;overflow:hidden}
+.set-side{width:220px;flex:0 0 220px;padding:16px 10px;overflow-y:auto;border-right:1px solid var(--line);background:var(--win2)}
+.set-user{display:flex;align-items:center;gap:11px;padding:8px 10px 18px}
+.set-user .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#4cc2ff,#0078d4);display:grid;place-items:center;font-size:19px}
+.set-user .tx b{display:block;font-size:12.5px}
+.set-user .tx span{font-size:11px;color:var(--dim)}
+.set-nav{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:6px;font-size:13px;width:100%;text-align:left;transition:background .12s}
+.set-nav:hover{background:var(--hover)}
+.set-nav.on{background:var(--active);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+.set-main{flex:1;overflow-y:auto;padding:26px 32px}
+.set-main h2{font-size:20px;margin-bottom:20px;font-weight:600}
+.set-card{background:var(--win2);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.set-row+.set-row{border-top:1px solid var(--line)}
+.set-row .lb{font-size:13px}
+.set-row .sb{font-size:11.5px;color:var(--dim);margin-top:2px}
+.wall-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:12px}
+.wall-th{height:66px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:.15s;background-size:cover;background-position:center}
+.wall-th:hover{transform:scale(1.04)}
+.wall-th.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,120,212,.3)}
+.acc-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.acc-dot{width:34px;height:34px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:.15s}
+.acc-dot:hover{transform:scale(1.1)}
+.acc-dot.on{border-color:var(--text);box-shadow:0 0 0 2px var(--win2)}
+.seg{display:inline-flex;background:var(--win2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{padding:7px 18px;font-size:12.5px;transition:.12s}
+.seg button.on{background:var(--accent);color:#fff}
 
-  .num-btn:hover:not(.done) {
-    background: #eee;
-  }
+/* ---------- PAINT ---------- */
+.paint{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.paint-tools{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--win2);flex-wrap:wrap}
+.paint-tools input[type=color]{width:34px;height:30px;border:1px solid var(--line);border-radius:5px;background:none;cursor:pointer;padding:2px}
+.paint-tools input[type=range]{width:100px;accent-color:var(--accent)}
+.paint-wrap{flex:1;overflow:hidden;background:#fff;position:relative}
+.paint-wrap canvas{display:block;cursor:crosshair;touch-action:none}
 
-  .num-btn.done {
-    background: #ccc;
-    color: #666;
-    cursor: default;
-  }
+/* ---------- PHOTOS ---------- */
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;padding:14px}
+.ph-item{aspect-ratio:1;border-radius:8px;cursor:pointer;transition:.15s;background-size:cover;background-position:center}
+.ph-item:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.ph-view{position:absolute;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:5}
+.ph-view .img{width:80%;height:78%;border-radius:10px;background-size:cover;background-position:center;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.ph-view .close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;font-size:16px}
+.ph-view .close:hover{background:rgba(255,255,255,.25)}
 
-  .num-btn.keyword {
-    border: 2px solid #000;
-  }
+/* ---------- MINESWEEPER ---------- */
+.ms{height:100%;display:flex;flex-direction:column;align-items:center;padding:14px;gap:12px;overflow:auto}
+.ms-head{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:340px;background:var(--win2);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.ms-num{font-family:"Cascadia Code",Consolas,monospace;font-size:20px;font-weight:700;color:#e81123}
+.ms-face{font-size:24px;width:44px;height:44px;border-radius:6px;display:grid;place-items:center}
+.ms-face:hover{background:var(--hover)}
+.ms-board{display:grid;gap:2px;background:var(--line);padding:2px;border-radius:6px}
+.ms-cell{
+  width:32px;height:32px;display:grid;place-items:center;font-size:14px;font-weight:700;
+  background:var(--win2);border-radius:3px;transition:background .08s;cursor:pointer;
+}
+.ms-cell:hover{background:var(--hover)}
+.ms-cell.open{background:transparent;cursor:default}
+.ms-cell.mine{background:#e81123;color:#fff}
+.ms-c1{color:#1976d2}.ms-c2{color:#388e3c}.ms-c3{color:#d32f2f}.ms-c4{color:#7b1fa2}
+.ms-c5{color:#ff8f00}.ms-c6{color:#0097a7}.ms-c7{color:#455a64}.ms-c8{color:#616161}
 
-  .num-btn.keyword.pulse {
-    animation: pulse 1s infinite;
-  }
+/* ---------- SNAKE ---------- */
+.snake{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+.snake canvas{border-radius:10px;background:#0b1220;box-shadow:0 8px 30px rgba(0,0,0,.35);touch-action:none}
+.snake .hud{display:flex;gap:26px;font-size:13px}
+.snake .hud b{color:var(--accent)}
 
-  @keyframes pulse {
-    0%, 100% { background: #fff; }
-    50% { background: #ffff00; }
-  }
+/* ---------- MUSIC ---------- */
+.mu{height:100%;display:flex;flex-direction:column;padding:20px;gap:16px}
+.mu-art{
+  height:180px;border-radius:12px;display:grid;place-items:center;font-size:64px;
+  background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;
+  box-shadow:0 12px 40px rgba(0,0,0,.3);transition:.3s;
+}
+.mu-info{text-align:center}
+.mu-info b{font-size:16px;display:block}
+.mu-info span{font-size:12.5px;color:var(--dim)}
+.mu-bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;cursor:pointer}
+.mu-bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s linear}
+.mu-time{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+.mu-ctrl{display:flex;align-items:center;justify-content:center;gap:16px}
+.mu-ctrl button{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:17px;transition:.12s}
+.mu-ctrl button:hover{background:var(--hover)}
+.mu-ctrl .play{width:56px;height:56px;background:var(--accent);color:#fff;font-size:22px}
+.mu-ctrl .play:hover{filter:brightness(1.15);background:var(--accent)}
+.mu-list{flex:1;overflow-y:auto;border-top:1px solid var(--line);padding-top:10px}
+.mu-track{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:6px;font-size:12.5px;width:100%;text-align:left}
+.mu-track:hover{background:var(--hover)}
+.mu-track.on{background:var(--active);font-weight:600}
+.mu-track .n{margin-left:auto;color:var(--dim);font-size:11px}
 
-  /* ===== MODAL ===== */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    z-index: 100;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
+/* ---------- BROWSER ---------- */
+.br{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.br-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--win2)}
+.br-bar button{width:30px;height:30px;border-radius:5px;display:grid;place-items:center;font-size:13px}
+.br-bar button:hover{background:var(--hover)}
+.br-url{
+  flex:1;height:32px;padding:0 14px;border-radius:16px;border:1px solid var(--line);
+  background:var(--win);outline:none;font-size:12.5px;
+}
+.br-url:focus{border-color:var(--accent)}
+.br iframe{flex:1;border:none;background:#fff;width:100%}
 
-  .overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
+/* ---------- TASK MANAGER ---------- */
+.tm{height:100%;display:flex;flex-direction:column;overflow:hidden}
+.tm-head{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:10px 16px;font-size:11.5px;font-weight:600;color:var(--dim);border-bottom:1px solid var(--line);background:var(--win2)}
+.tm-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;padding:10px 16px;font-size:12.5px;align-items:center;border-bottom:1px solid var(--line);transition:background .1s}
+.tm-row:hover{background:var(--hover)}
+.tm-row .nm{display:flex;align-items:center;gap:9px}
+.tm-row .end{padding:4px 10px;border-radius:4px;background:var(--hover);font-size:11px;width:fit-content}
+.tm-row .end:hover{background:#e81123;color:#fff}
+.tm-bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+.tm-bar i{display:block;height:100%;background:var(--accent)}
 
-  .modal {
-    background: #fff;
-    border: 2px solid #000;
-    padding: 18px 16px;
-    max-width: 420px;
-    width: 100%;
-    max-height: 88vh;
-    overflow-y: auto;
-    transform: translateY(15px);
-    transition: transform 0.25s;
-  }
-
-  .overlay.show .modal {
-    transform: translateY(0);
-  }
-
-  .modal-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #000;
-  }
-
-  .modal-num {
-    font-size: 13px;
-    font-weight: bold;
-  }
-
-  .close-x {
-    background: none;
-    border: none;
-    font-size: 22px;
-    color: #000;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 4px;
-    font-family: Arial, sans-serif;
-  }
-
-  .q-text {
-    font-size: 15px;
-    line-height: 1.5;
-    margin-bottom: 14px;
-  }
-
-  .options {
-    display: grid;
-    gap: 6px;
-  }
-
-  .option {
-    padding: 10px 12px;
-    background: #fff;
-    border: 1px solid #000;
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
-    color: #000;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    opacity: 0;
-    transform: translateY(30px);
-    animation: jumpUp 0.4s ease forwards;
-  }
-
-  .option:nth-child(1) { animation-delay: 0.05s; }
-  .option:nth-child(2) { animation-delay: 0.12s; }
-  .option:nth-child(3) { animation-delay: 0.19s; }
-  .option:nth-child(4) { animation-delay: 0.26s; }
-
-  @keyframes jumpUp {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .option:hover {
-    background: #eee;
-  }
-
-  .option .badge {
-    width: 22px;
-    height: 22px;
-    border: 1px solid #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    flex-shrink: 0;
-    background: #fff;
-    font-size: 12px;
-  }
-
-  .option.correct {
-    background: #d1e7d1;
-    border-color: #000;
-    animation: pulseOk 0.5s;
-  }
-
-  .option.correct .badge {
-    background: #000;
-    color: #fff;
-  }
-
-  .option.wrong {
-    background: #fde2e2;
-    border-color: #000;
-    animation: shakeIt 0.4s;
-  }
-
-  .option.wrong .badge {
-    background: #000;
-    color: #fff;
-  }
-
-  @keyframes pulseOk {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-  }
-
-  @keyframes shakeIt {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-
-  .feedback {
-    margin-top: 10px;
-    padding: 6px;
-    text-align: center;
-    font-size: 13px;
-    display: none;
-  }
-
-  .feedback.show { display: block; }
-  .feedback.ok { color: #006400; }
-  .feedback.no { color: #b91c1c; }
-
-  /* ===== WIN ===== */
-  .win {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    padding: 20px;
-  }
-
-  .win.show { display: flex; }
-
-  .win-box {
-    background: #fff;
-    border: 2px solid #000;
-    padding: 24px 20px;
-    text-align: center;
-    max-width: 320px;
-    width: 100%;
-  }
-
-  .win-box h2 {
-    font-size: 20px;
-    margin-bottom: 6px;
-  }
-
-  .win-box p {
-    font-size: 14px;
-    color: #333;
-    margin-bottom: 16px;
-  }
-
-  .win-box button {
-    padding: 10px 24px;
-    background: #000;
-    color: #fff;
-    border: none;
-    font-size: 14px;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  /* ===== TOAST ===== */
-  .toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-80px);
-    background: #000;
-    color: #fff;
-    padding: 10px 18px;
-    font-size: 13px;
-    z-index: 999;
-    transition: transform 0.3s;
-  }
-
-  .toast.show {
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 500px) {
-    .cell { width: 24px; height: 24px; font-size: 13px; }
-    .cell .num { font-size: 7px; }
-    h1 { font-size: 16px; }
-    .num-btn { width: 32px; height: 32px; font-size: 13px; }
-  }
-
-  @media (max-width: 380px) {
-    .cell { width: 21px; height: 21px; font-size: 11px; }
-    .num-btn { width: 28px; height: 28px; font-size: 12px; }
-  }
-
-  @media (orientation: landscape) and (max-height: 500px) {
-    body { padding: 6px; }
-    h1 { font-size: 14px; margin-bottom: 2px; }
-    .subtitle { display: none; }
-    .status { margin-bottom: 4px; padding-bottom: 2px; font-size: 11px; }
-    .board-wrap { padding: 3px; margin-bottom: 6px; }
-    .cell { width: 22px; height: 22px; font-size: 12px; }
-    .num-btn { width: 28px; height: 28px; font-size: 12px; }
-    .number-row { margin-bottom: 4px; gap: 3px; }
-  }
+/* ---------- CLOCK ---------- */
+.ck{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+.ck canvas{border-radius:50%;box-shadow:0 10px 40px rgba(0,0,0,.28)}
+.ck .dig{font-size:28px;font-weight:300;font-variant-numeric:tabular-nums}
+.ck .dt{font-size:13px;color:var(--dim)}
+.ck .world{display:flex;gap:22px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.ck .world div{text-align:center;font-size:12px}
+.ck .world b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.ck .world span{color:var(--dim);font-size:11px}
 </style>
 </head>
 <body>
 
-<h1>Tìm từ chìa khóa trong ô chữ sau:</h1>
-<p class="subtitle">Different Generations</p>
-<div class="status" id="status">0 / 11 solved</div>
-
-<div class="board-wrap">
-  <div class="grid" id="grid"></div>
+<!-- ============ BOOT ============ -->
+<div id="boot">
+  <div class="boot-logo"><i></i><i></i><i></i><i></i></div>
+  <div class="boot-spinner"></div>
+  <div class="boot-text">Đang khởi động Windows...</div>
 </div>
 
-<div class="number-row" id="numberRow"></div>
+<!-- ============ LOCK ============ -->
+<div id="lock">
+  <div id="lockTimeView" style="display:flex;flex-direction:column;align-items:center">
+    <div class="lock-time" id="lockTime">00:00</div>
+    <div class="lock-date" id="lockDate">—</div>
+    <div class="lock-hint">Nhấn phím bất kỳ hoặc click để đăng nhập</div>
+  </div>
+  <div id="lockLoginView" class="lock-login" style="display:none">
+    <div class="lock-avatar">👤</div>
+    <div class="lock-name">Người dùng</div>
+    <button class="lock-btn" id="lockBtn">Đăng nhập</button>
+  </div>
+</div>
 
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-num" id="modalNum">Câu 1</span>
-      <button class="close-x" onclick="closeModal()">×</button>
+<!-- ============ DESKTOP ============ -->
+<div id="desktop">
+  <div id="desktop-icons"></div>
+  <div id="windows-layer"></div>
+</div>
+
+<!-- ============ TASKBAR ============ -->
+<div id="taskbar">
+  <div class="tb-center" id="tbCenter"></div>
+  <div class="tb-right">
+    <div class="tray" id="quickToggle" title="Cài đặt nhanh">
+      <div class="tray-icons"><span>📶</span><span>🔊</span><span>🔋</span></div>
     </div>
-    <div class="q-text" id="qText"></div>
-    <div class="options" id="options"></div>
-    <div class="feedback" id="feedback"></div>
+    <div class="tray" id="clockTray" title="Ngày và giờ">
+      <div class="col"><span id="tbTime">00:00</span><span id="tbDate">01/01/2025</span></div>
+    </div>
+    <div id="bell" title="Thông báo">🔔</div>
   </div>
 </div>
 
-<div class="win" id="win">
-  <div class="win-box">
-    <h2>Hoàn thành!</h2>
-    <p>Bạn đã giải xong ô chữ.</p>
-    <button onclick="resetGame()">Chơi lại</button>
+<!-- ============ START MENU ============ -->
+<div id="start">
+  <div class="start-search">
+    <span>🔍</span>
+    <input id="startSearch" placeholder="Tìm kiếm ứng dụng, tệp và cài đặt" />
+  </div>
+  <div class="start-scroll">
+    <div class="start-sec"><h3>Đã ghim</h3><button id="btnAllApps">Tất cả ứng dụng ›</button></div>
+    <div class="pin-grid" id="pinGrid"></div>
+    <div class="start-sec"><h3>Đề xuất</h3></div>
+    <div class="rec-list" id="recList"></div>
+  </div>
+  <div class="start-foot">
+    <button class="start-user" id="startUser"><span class="av">👤</span> Người dùng</button>
+    <button id="powerBtn" title="Nguồn">⏻</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ============ PANELS ============ -->
+<div id="quick" class="panel">
+  <div class="qs-grid" id="qsGrid"></div>
+  <div class="qs-slider">
+    <label>☀️ <input type="range" id="brightness" min="30" max="100" value="100" /></label>
+    <label>🔊 <input type="range" id="volume" min="0" max="100" value="65" /></label>
+  </div>
+</div>
+
+<div id="calendar" class="panel">
+  <div class="cal-head">
+    <b id="calTitle">—</b>
+    <div class="cal-nav">
+      <button id="calPrev">‹</button>
+      <button id="calNext">›</button>
+    </div>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-news">
+    <b style="color:var(--text);font-size:12.5px">📰 Tin nổi bật</b><br />
+    Chào mừng bạn đến với Windows 11 Web Simulator — nơi mọi thứ chạy trong một tab trình duyệt.
+  </div>
+</div>
+
+<div id="taskview"></div>
+
+<!-- ============ CONTEXT MENU ============ -->
+<div id="ctxmenu"></div>
+
+<!-- ============ SNAP PREVIEW ============ -->
+<div id="snap-preview"></div>
+
+<!-- ============ TOASTS ============ -->
+<div id="toasts"></div>
 
 <script>
-// ===== DỮ LIỆU Ô CHỮ =====
-// Cột dọc (yellow) nằm ở col 5.
-// Chữ cái đầu của mỗi hàng ghép thành: G-E-N-E-R-A-T-I-O-N (GENERATION)
-const words = [
-  {
-    id: 1, text: 'GENERATION', row: 0, col: 4, keywordIndex: 1,
-    q: 'All the people born and living at about the same time is called a ______.',
-    options: ['Generation', 'Nation', 'Section', 'Faction'], correct: 0
-  },
-  {
-    id: 2, text: 'EXPERIENCED', row: 1, col: 5, keywordIndex: 0,
-    q: 'Generation X are ______ because they have seen many social changes in history.',
-    options: ['Confused', 'Experienced', 'Tired', 'Angry'], correct: 1
-  },
-  {
-    id: 3, text: 'NATIVES', row: 2, col: 1, keywordIndex: 4,
-    q: 'Generation Z are called digital ______ because they grew up with the internet.',
-    options: ['Workers', 'Natives', 'Tourists', 'Visitors'], correct: 1
-  },
-  {
-    id: 4, text: 'EARLY', row: 3, col: 1, keywordIndex: 4,
-    q: 'Gen Z were born between the late 1990s and ______ 2010s.',
-    options: ['Late', 'Early', 'Middle', 'End'], correct: 1
-  },
-  {
-    id: 5, text: 'READY', row: 4, col: 5, keywordIndex: 0,
-    q: 'Generation X are ______ for changes and prepared to work through challenges.',
-    options: ['Afraid', 'Ready', 'Slow', 'Late'], correct: 1
-  },
-  {
-    id: 6, text: 'ADAPT', row: 5, col: 2, keywordIndex: 3,
-    q: 'Millennials are ready to ______ to new situations and changes.',
-    options: ['Adapt', 'Adopt', 'Add', 'Accept'], correct: 0
-  },
-  {
-    id: 7, text: 'TEAMWORK', row: 6, col: 1, keywordIndex: 4,
-    q: 'Millennials value ______ when working together in a group.',
-    options: ['Homework', 'Teamwork', 'Network', 'Framework'], correct: 1
-  },
-  {
-    id: 8, text: 'INTERESTED', row: 7, col: 4, keywordIndex: 1,
-    q: 'Gen Z are very ______ in technology and new digital platforms.',
-    options: ['Bored', 'Interested', 'Tired', 'Confused'], correct: 1
-  },
-  {
-    id: 9, text: 'ONLINE', row: 8, col: 1, keywordIndex: 4,
-    q: 'Gen Z grew up ______ and never knew the world before digital media.',
-    options: ['Offline', 'Online', 'Outside', 'Overseas'], correct: 1
-  },
-  {
-    id: 10, text: 'NEW', row: 9, col: 5, keywordIndex: 0,
-    q: 'Each generation comes with its own ______ characteristics and habits.',
-    options: ['Old', 'New', 'Bad', 'Same'], correct: 1
-  }
+/* ============================================================
+   0. TIỆN ÍCH
+   ============================================================ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = (n) => String(n).padStart(2, '0');
+
+/* ============================================================
+   1. DỮ LIỆU TĨNH
+   ============================================================ */
+const WALLPAPERS = [
+  'radial-gradient(circle at 25% 20%, #1e6fd9 0%, #0b2a52 45%, #050d1a 100%)',
+  'linear-gradient(135deg,#667eea 0%,#764ba2 100%)',
+  'linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%)',
+  'linear-gradient(135deg,#f6d365 0%,#fda085 100%)',
+  'linear-gradient(135deg,#a8edea 0%,#fed6e3 100%)',
+  'linear-gradient(135deg,#30cfd0 0%,#330867 100%)',
+  'linear-gradient(135deg,#ff9a9e 0%,#fad0c4 55%,#fbc2eb 100%)',
+  'linear-gradient(135deg,#141e30 0%,#243b55 100%)',
+  'radial-gradient(circle at 70% 30%, #12c2e9, #c471ed 45%, #f64f59 100%)',
+  'linear-gradient(135deg,#232526 0%,#414345 100%)'
 ];
 
-const keywordQ = {
-  id: 11,
-  q: 'Nhìn vào các ô màu vàng theo hàng dọc. Từ khoá là gì?',
-  options: ['GENERATION', 'GENERAL', 'GENEROUS', 'GENE'],
-  correct: 0
+const ACCENTS = ['#0078d4', '#4cc2ff', '#8764b8', '#e74856', '#16c60c', '#ff8c00', '#0099bc', '#c239b3'];
+
+/* Hệ thống tệp giả lập */
+const FS = {
+  name: 'This PC', type: 'folder', children: [
+    { name: 'Desktop', type: 'folder', children: [
+      { name: 'Ghi chú nhanh.txt', type: 'file', size: '1 KB' },
+      { name: 'Ảnh chụp màn hình.png', type: 'file', size: '842 KB' }
+    ]},
+    { name: 'Documents', type: 'folder', children: [
+      { name: 'Báo cáo.docx', type: 'file', size: '24 KB' },
+      { name: 'Kế hoạch.xlsx', type: 'file', size: '18 KB' },
+      { name: 'Thuyết trình.pptx', type: 'file', size: '2.4 MB' },
+      { name: 'Dự án Web', type: 'folder', children: [
+        { name: 'index.html', type: 'file', size: '8 KB' },
+        { name: 'style.css', type: 'file', size: '4 KB' },
+        { name: 'script.js', type: 'file', size: '12 KB' },
+        { name: 'assets', type: 'folder', children: [
+          { name: 'logo.svg', type: 'file', size: '3 KB' },
+          { name: 'banner.jpg', type: 'file', size: '512 KB' }
+        ]}
+      ]}
+    ]},
+    { name: 'Downloads', type: 'folder', children: [
+      { name: 'setup.exe', type: 'file', size: '68 MB' },
+      { name: 'tai-lieu.pdf', type: 'file', size: '1.2 MB' },
+      { name: 'nhac.mp3', type: 'file', size: '4.8 MB' }
+    ]},
+    { name: 'Pictures', type: 'folder', children: [
+      { name: 'hoang-hon.jpg', type: 'file', size: '2.1 MB' },
+      { name: 'nui-rung.jpg', type: 'file', size: '3.4 MB' },
+      { name: 'bien-xanh.jpg', type: 'file', size: '1.9 MB' }
+    ]},
+    { name: 'Music', type: 'folder', children: [
+      { name: 'Track 01.mp3', type: 'file', size: '5.1 MB' },
+      { name: 'Track 02.mp3', type: 'file', size: '4.6 MB' }
+    ]},
+    { name: 'Videos', type: 'folder', children: [
+      { name: 'demo.mp4', type: 'file', size: '124 MB' }
+    ]},
+    { name: 'Ổ đĩa C:', type: 'drive', children: [
+      { name: 'Windows', type: 'folder', children: [
+        { name: 'System32', type: 'folder', children: [] }
+      ]},
+      { name: 'Program Files', type: 'folder', children: [] },
+      { name: 'Users', type: 'folder', children: [] }
+    ]}
+  ]
 };
 
-// ===== XÂY LƯỚI =====
-const maxLen = Math.max(...words.map(w => w.text.length));
-const totalRows = 10;
-const totalCols = 12; // đủ chỗ cho từ dài nhất (TEAMWORK: col 1 + 10 = 11)
+/* ============================================================
+   2. TRẠNG THÁI
+   ============================================================ */
+const state = {
+  z: 100,
+  activeId: null,
+  theme: localStorage.getItem('win_theme') || 'light',
+  wallpaper: +(localStorage.getItem('win_wall') || 0),
+  accent: localStorage.getItem('win_accent') || '#0078d4',
+  brightness: 100
+};
+const wins = new Map();
+let seq = 0;
 
-// Tạo map ô
-const cellMap = {};
-words.forEach(w => {
-  for (let i = 0; i < w.text.length; i++) {
-    const c = w.col + i;
-    if (!cellMap[w.row]) cellMap[w.row] = {};
-    cellMap[w.row][c] = { letter: w.text[i], wordId: w.id, isKeyword: i === w.keywordIndex };
+const desktopEl = $('#desktop');
+const layerEl = $('#windows-layer');
+
+/* ============================================================
+   3. GIAO DIỆN NỀN TẢNG
+   ============================================================ */
+function applyTheme() {
+  document.body.classList.toggle('dark', state.theme === 'dark');
+  document.documentElement.style.setProperty('--accent', state.accent);
+  localStorage.setItem('win_theme', state.theme);
+  localStorage.setItem('win_accent', state.accent);
+}
+function applyWallpaper() {
+  const wp = WALLPAPERS[state.wallpaper % WALLPAPERS.length];
+  desktopEl.style.backgroundImage = wp;
+  $('#lock').style.backgroundImage = wp;
+  localStorage.setItem('win_wall', state.wallpaper);
+}
+
+/* Toast */
+function showToast(title, msg = '', icon = 'ℹ️') {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = '<b>' + icon + ' ' + esc(title) + '</b>' + (msg ? esc(msg) : '');
+  $('#toasts').appendChild(t);
+  setTimeout(() => {
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 350);
+  }, 3200);
+}
+
+/* ============================================================
+   4. ĐỒNG HỒ
+   ============================================================ */
+function tickClock() {
+  const d = new Date();
+  const hhmm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  $('#lockTime').textContent = hhmm;
+  $('#tbTime').textContent = hhmm;
+  $('#tbDate').textContent = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
+  const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  $('#lockDate').textContent = days[d.getDay()] + ', ' + d.getDate() + ' tháng ' + (d.getMonth() + 1);
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+/* ============================================================
+   5. BOOT → LOCK → DESKTOP
+   ============================================================ */
+setTimeout(() => {
+  $('#boot').classList.add('hide');
+}, 2400);
+
+function goToLogin() {
+  $('#lockTimeView').style.display = 'none';
+  $('#lockLoginView').style.display = 'flex';
+}
+function unlock() {
+  $('#lock').classList.add('hide');
+  setTimeout(() => {
+    $('#lock').style.display = 'none';
+    showToast('Chào mừng trở lại!', 'Nhấn ⊞ hoặc phím Windows để mở Start.', '👋');
+  }, 650);
+}
+$('#lock').addEventListener('click', (e) => {
+  if ($('#lockLoginView').style.display === 'none') goToLogin();
+});
+document.addEventListener('keydown', (e) => {
+  if ($('#lock').style.display !== 'none' && !$('#lock').classList.contains('hide')) {
+    if ($('#lockLoginView').style.display === 'none') goToLogin();
   }
 });
+$('#lockBtn').addEventListener('click', (e) => { e.stopPropagation(); unlock(); });
 
-// Render lưới
-const gridEl = document.getElementById('grid');
-gridEl.style.gridTemplateColumns = `repeat(${totalCols}, 28px)`;
-for (let r = 0; r < totalRows; r++) {
-  for (let c = 0; c < totalCols; c++) {
-    const cell = document.createElement('div');
-    cell.className = 'cell';
-    const key = r + ',' + c;
-    if (cellMap[r] && cellMap[r][c]) {
-      cell.dataset.key = key;
-      cell.dataset.letter = cellMap[r][c].letter;
-      if (cellMap[r][c].isKeyword) cell.classList.add('keyword-col');
-      // Số thứ tự ở đầu từ
-      const w = words.find(x => x.id === cellMap[r][c].wordId);
-      if (w && w.row === r && w.col === c) {
-        const num = document.createElement('span');
-        num.className = 'num';
-        num.textContent = w.id;
-        cell.appendChild(num);
-      }
-      const letterEl = document.createElement('span');
-      letterEl.className = 'letter';
-      letterEl.textContent = cellMap[r][c].letter;
-      cell.appendChild(letterEl);
-    } else {
-      cell.classList.add('empty');
+/* ============================================================
+   6. ICON DESKTOP
+   ============================================================ */
+const DESKTOP_ICONS = [
+  { app: 'explorer', label: 'This PC', emoji: '🖥️' },
+  { app: 'recycle', label: 'Thùng rác', emoji: '🗑️' },
+  { app: 'notepad', label: 'Notepad', emoji: '📝' },
+  { app: 'terminal', label: 'Terminal', emoji: '⌨️' },
+  { app: 'paint', label: 'Paint', emoji: '🎨' },
+  { app: 'browser', label: 'Trình duyệt', emoji: '🌐' },
+  { app: 'minesweeper', label: 'Dò mìn', emoji: '💣' },
+  { app: 'snake', label: 'Rắn săn mồi', emoji: '🐍' },
+  { app: 'settings', label: 'Cài đặt', emoji: '⚙️' }
+];
+
+function renderDesktopIcons() {
+  const box = $('#desktop-icons');
+  box.innerHTML = '';
+  DESKTOP_ICONS.forEach(ic => {
+    const el = document.createElement('div');
+    el.className = 'dicon';
+    el.innerHTML = '<div class="em">' + ic.emoji + '</div><div class="lb">' + esc(ic.label) + '</div>';
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      $$('.dicon').forEach(x => x.classList.remove('sel'));
+      el.classList.add('sel');
+    });
+    el.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      openApp(ic.app);
+    });
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      $$('.dicon').forEach(x => x.classList.remove('sel'));
+      el.classList.add('sel');
+      showContextMenu(e.clientX, e.clientY, [
+        { label: 'Mở', icon: '📂', action: () => openApp(ic.app) },
+        { sep: true },
+        { label: 'Đổi tên', icon: '✏️', action: () => showToast('Không thể đổi tên', 'Đây là môi trường giả lập.', '⚠️') },
+        { label: 'Xóa', icon: '🗑️', action: () => showToast('Đã xóa', ic.label + ' đã được chuyển vào Thùng rác.', '🗑️') },
+        { sep: true },
+        { label: 'Thuộc tính', icon: 'ℹ️', action: () => showToast('Thuộc tính', ic.label, 'ℹ️') }
+      ]);
+    });
+    box.appendChild(el);
+  });
+}
+
+/* Click nền desktop → bỏ chọn */
+desktopEl.addEventListener('mousedown', (e) => {
+  if (e.target === desktopEl) $$('.dicon').forEach(x => x.classList.remove('sel'));
+  closeAllPanels();
+});
+
+/* Menu chuột phải desktop */
+desktopEl.addEventListener('contextmenu', (e) => {
+  if (e.target !== desktopEl) return;
+  e.preventDefault();
+  showContextMenu(e.clientX, e.clientY, [
+    { label: 'Xem', icon: '👁️', action: () => {} },
+    { label: 'Sắp xếp', icon: '↕️', action: () => showToast('Đã sắp xếp', 'Các biểu tượng đã được sắp xếp lại.', '✅') },
+    { label: 'Làm mới', icon: '🔄', action: () => { renderDesktopIcons(); showToast('Đã làm mới', '', '🔄'); } },
+    { sep: true },
+    { label: 'Thư mục mới', icon: '📁', action: () => showToast('Đã tạo', 'Thư mục mới đã được tạo trên Desktop.', '📁') },
+    { label: 'Tệp văn bản mới', icon: '📄', action: () => openApp('notepad') },
+    { sep: true },
+    { label: 'Đổi hình nền', icon: '🖼️', action: () => { state.wallpaper = (state.wallpaper + 1) % WALLPAPERS.length; applyWallpaper(); } },
+    { label: 'Cá nhân hóa', icon: '🎨', action: () => openApp('settings', { page: 'personal' }) },
+    { label: 'Cài đặt hiển thị', icon: '🖥️', action: () => openApp('settings') },
+    { sep: true },
+    { label: 'Mở Terminal tại đây', icon: '⌨️', action: () => openApp('terminal') }
+  ]);
+});
+
+/* ============================================================
+   7. MENU CHUỘT PHẢI
+   ============================================================ */
+function showContextMenu(x, y, items) {
+  const m = $('#ctxmenu');
+  m.innerHTML = '';
+  items.forEach(it => {
+    if (it.sep) {
+      const s = document.createElement('div');
+      s.className = 'ctx-sep';
+      m.appendChild(s);
+      return;
     }
-    gridEl.appendChild(cell);
+    const b = document.createElement('button');
+    b.className = 'ctx-item';
+    b.innerHTML = '<span class="ic">' + (it.icon || '') + '</span><span>' + esc(it.label) + '</span>';
+    b.addEventListener('click', () => {
+      hideContextMenu();
+      it.action && it.action();
+    });
+    m.appendChild(b);
+  });
+  m.classList.add('open');
+  const r = m.getBoundingClientRect();
+  const px = Math.min(x, window.innerWidth - r.width - 8);
+  const py = Math.min(y, window.innerHeight - r.height - 8);
+  m.style.left = px + 'px';
+  m.style.top = py + 'px';
+}
+function hideContextMenu() { $('#ctxmenu').classList.remove('open'); }
+document.addEventListener('click', hideContextMenu);
+document.addEventListener('contextmenu', (e) => {
+  if (!e.target.closest('#desktop') && !e.target.closest('.fe-item') && !e.target.closest('.dicon')) {
+    /* để mặc định ở nơi khác */
+  }
+});
+
+/* ============================================================
+   8. QUẢN LÝ CỬA SỔ
+   ============================================================ */
+function focusWin(id) {
+  const w = wins.get(id);
+  if (!w) return;
+  state.activeId = id;
+  w.el.style.zIndex = ++state.z;
+  wins.forEach(x => x.el.classList.toggle('focused', x.id === id));
+  renderTaskbar();
+}
+
+function openApp(appId, opts = {}) {
+  const app = APPS[appId];
+  if (!app) { showToast('Không tìm thấy', 'Ứng dụng "' + appId + '" không tồn tại.', '⚠️'); return; }
+
+  /* Nếu đã mở → focus */
+  for (const w of wins.values()) {
+    if (w.appId === appId) {
+      if (w.minimized) restoreWin(w.id);
+      focusWin(w.id);
+      if (app.onReopen) app.onReopen(w);
+      return w.id;
+    }
+  }
+
+  const id = 'win-' + (++seq);
+  const DW = desktopEl.clientWidth, DH = desktopEl.clientHeight;
+  const W = Math.min(app.w || 780, Math.max(320, DW - 60));
+  const H = Math.min(app.h || 540, Math.max(200, DH - 50));
+  const off = (wins.size % 6) * 26;
+  const left = Math.max(8, Math.round((DW - W) / 2 - 70 + off));
+  const top = Math.max(8, Math.round((DH - H) / 2 - 40 + off));
+
+  const el = document.createElement('div');
+  el.className = 'window focused';
+  el.style.cssText = 'left:' + left + 'px;top:' + top + 'px;width:' + W + 'px;height:' + H + 'px;z-index:' + (++state.z);
+  el.innerHTML =
+    '<div class="titlebar">' +
+      '<div class="tb-icon">' + app.icon + '</div>' +
+      '<div class="tb-title">' + esc(app.name) + '</div>' +
+      '<div class="tb-controls">' +
+        '<button class="min" title="Thu nhỏ"><svg width="10" height="10"><line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1"/></svg></button>' +
+        '<button class="max" title="Phóng to"><svg width="10" height="10"><rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/></svg></button>' +
+        '<button class="close" title="Đóng"><svg width="10" height="10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1"/></svg></button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="win-body"></div>' +
+    '<div class="rz rz-n"></div><div class="rz rz-s"></div><div class="rz rz-w"></div><div class="rz rz-e"></div>' +
+    '<div class="rz rz-nw"></div><div class="rz rz-ne"></div><div class="rz rz-sw"></div><div class="rz rz-se"></div>';
+
+  layerEl.appendChild(el);
+
+  const winObj = { id, appId, el, minimized: false, maximized: false, snapped: false, prev: null };
+  wins.set(id, winObj);
+
+  const bodyEl = el.querySelector('.win-body');
+  try { app.build(bodyEl, winObj, opts); }
+  catch (err) { bodyEl.innerHTML = '<div class="empty-state"><div class="big">⚠️</div>Lỗi tải ứng dụng</div>'; console.error(err); }
+
+  /* Sự kiện điều khiển */
+  el.querySelector('.min').addEventListener('click', (e) => { e.stopPropagation(); minimizeWin(id); });
+  el.querySelector('.max').addEventListener('click', (e) => { e.stopPropagation(); toggleMax(id); });
+  el.querySelector('.close').addEventListener('click', (e) => { e.stopPropagation(); closeWin(id); });
+  el.querySelector('.titlebar').addEventListener('dblclick', (e) => {
+    if (e.target.closest('.tb-controls')) return;
+    toggleMax(id);
+  });
+  el.addEventListener('pointerdown', () => focusWin(id));
+
+  /* Kéo */
+  el.querySelector('.titlebar').addEventListener('pointerdown', (e) => startDrag(e, winObj));
+
+  /* Resize */
+  el.querySelectorAll('.rz').forEach(h => {
+    h.addEventListener('pointerdown', (e) => startResize(e, winObj, h.classList[1].replace('rz-', '')));
+  });
+
+  focusWin(id);
+  renderTaskbar();
+  return id;
+}
+
+function minimizeWin(id) {
+  const w = wins.get(id);
+  if (!w) return;
+  w.minimized = true;
+  w.el.classList.add('min');
+  if (state.activeId === id) state.activeId = null;
+  renderTaskbar();
+}
+function restoreWin(id) {
+  const w = wins.get(id);
+  if (!w) return;
+  w.minimized = false;
+  w.el.classList.remove('min');
+  focusWin(id);
+}
+function closeWin(id) {
+  const w = wins.get(id);
+  if (!w) return;
+  w.el.style.transition = 'opacity .14s, transform .14s';
+  w.el.style.opacity = '0';
+  w.el.style.transform = 'scale(.95)';
+  setTimeout(() => w.el.remove(), 140);
+  wins.delete(id);
+  if (state.activeId === id) state.activeId = null;
+  renderTaskbar();
+}
+function toggleMax(id) {
+  const w = wins.get(id);
+  if (!w) return;
+  if (w.maximized || w.snapped) {
+    w.el.classList.remove('max');
+    w.maximized = false; w.snapped = false;
+    if (w.prev) Object.assign(w.el.style, w.prev);
+  } else {
+    w.prev = { left: w.el.style.left, top: w.el.style.top, width: w.el.style.width, height: w.el.style.height };
+    w.el.classList.add('max');
+    w.el.style.left = '0px'; w.el.style.top = '0px';
+    w.el.style.width = '100%'; w.el.style.height = '100%';
+    w.maximized = true;
+  }
+  focusWin(id);
+}
+
+/* ---------- SNAP ---------- */
+function applySnap(id, pos) {
+  const w = wins.get(id);
+  if (!w) return;
+  if (!w.maximized && !w.snapped) {
+    w.prev = { left: w.el.style.left, top: w.el.style.top, width: w.el.style.width, height: w.el.style.height };
+  }
+  const DW = desktopEl.clientWidth, DH = desktopEl.clientHeight;
+  let g;
+  if (pos === 'max')        g = { l: 0, t: 0, w: DW, h: DH };
+  else if (pos === 'left')  g = { l: 0, t: 0, w: Math.round(DW / 2), h: DH };
+  else if (pos === 'right') g = { l: Math.round(DW / 2), t: 0, w: Math.round(DW / 2), h: DH };
+  else if (pos === 'tl')    g = { l: 0, t: 0, w: Math.round(DW / 2), h: Math.round(DH / 2) };
+  else if (pos === 'tr')    g = { l: Math.round(DW / 2), t: 0, w: Math.round(DW / 2), h: Math.round(DH / 2) };
+  else if (pos === 'bl')    g = { l: 0, t: Math.round(DH / 2), w: Math.round(DW / 2), h: Math.round(DH / 2) };
+  else if (pos === 'br')    g = { l: Math.round(DW / 2), t: Math.round(DH / 2), w: Math.round(DW / 2), h: Math.round(DH / 2) };
+  w.el.classList.add('max');
+  Object.assign(w.el.style, { left: g.l + 'px', top: g.t + 'px', width: g.w + 'px', height: g.h + 'px' });
+  w.maximized = (pos === 'max');
+  w.snapped = true;
+  focusWin(id);
+}
+
+/* ---------- KÉO CỬA SỔ ---------- */
+let dragCtx = null;
+const snapPrev = $('#snap-preview');
+
+function startDrag(e, w) {
+  if (e.button !== 0) return;
+  focusWin(w.id);
+
+  /* Nếu đang max/snap → khôi phục kích thước để kéo tiếp */
+  if (w.maximized || w.snapped) {
+    const pw = parseFloat(w.prev && w.prev.width) || 800;
+    const ph = parseFloat(w.prev && w.prev.height) || 520;
+    w.el.classList.remove('max');
+    w.maximized = false; w.snapped = false;
+    w.el.style.width = pw + 'px';
+    w.el.style.height = ph + 'px';
+    w.el.style.left = Math.max(0, e.clientX - pw / 2) + 'px';
+    w.el.style.top = Math.max(0, e.clientY - 19) + 'px';
+  }
+
+  const r = w.el.getBoundingClientRect();
+  const dr = desktopEl.getBoundingClientRect();
+  dragCtx = {
+    w,
+    offX: e.clientX - r.left,
+    offY: e.clientY - r.top,
+    desktopTop: dr.top,
+    snap: null
+  };
+  w.el.classList.add('dragging');
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup', onDragEnd);
+  e.preventDefault();
+}
+
+function onDragMove(e) {
+  if (!dragCtx) return;
+  const { w, offX, offY } = dragCtx;
+  let x = e.clientX - offX;
+  let y = e.clientY - offY - dragCtx.desktopTop;
+
+  /* Giới hạn nhẹ */
+  x = Math.max(-w.el.offsetWidth + 80, Math.min(x, desktopEl.clientWidth - 80));
+  y = Math.max(0, Math.min(y, desktopEl.clientHeight - 40));
+
+  w.el.style.left = x + 'px';
+  w.el.style.top = y + 'px';
+
+  /* Phát hiện snap */
+  const DW = desktopEl.clientWidth, DH = desktopEl.clientHeight;
+  let snap = null;
+  if (e.clientY <= dragCtx.desktopTop + 6) snap = 'max';
+  else if (e.clientX <= 6) snap = 'left';
+  else if (e.clientX >= window.innerWidth - 6) snap = 'right';
+  else if (e.clientY <= dragCtx.desktopTop + 70 && e.clientX <= 90) snap = 'tl';
+  else if (e.clientY <= dragCtx.desktopTop + 70 && e.clientX >= window.innerWidth - 90) snap = 'tr';
+  else if (e.clientY >= dragCtx.desktopTop + DH - 60 && e.clientX <= 90) snap = 'bl';
+  else if (e.clientY >= dragCtx.desktopTop + DH - 60 && e.clientX >= window.innerWidth - 90) snap = 'br';
+
+  dragCtx.snap = snap;
+
+  if (snap) {
+    let g;
+    if (snap === 'max')        g = { l: 0, t: dragCtx.desktopTop, w: DW, h: DH };
+    else if (snap === 'left')  g = { l: 0, t: dragCtx.desktopTop, w: DW / 2, h: DH };
+    else if (snap === 'right') g = { l: DW / 2, t: dragCtx.desktopTop, w: DW / 2, h: DH };
+    else if (snap === 'tl')    g = { l: 0, t: dragCtx.desktopTop, w: DW / 2, h: DH / 2 };
+    else if (snap === 'tr')    g = { l: DW / 2, t: dragCtx.desktopTop, w: DW / 2, h: DH / 2 };
+    else if (snap === 'bl')    g = { l: 0, t: dragCtx.desktopTop + DH / 2, w: DW / 2, h: DH / 2 };
+    else if (snap === 'br')    g = { l: DW / 2, t: dragCtx.desktopTop + DH / 2, w: DW / 2, h: DH / 2 };
+    Object.assign(snapPrev.style, {
+      left: g.l + 'px', top: g.t + 'px',
+      width: g.w + 'px', height: g.h + 'px'
+    });
+    snapPrev.classList.add('on');
+  } else {
+    snapPrev.classList.remove('on');
   }
 }
 
-// ===== NÚT SỐ =====
-const numberRow = document.getElementById('numberRow');
-words.forEach(w => {
-  const btn = document.createElement('button');
-  btn.className = 'num-btn';
-  btn.textContent = w.id;
-  btn.dataset.id = w.id;
-  btn.onclick = () => openQ(w.id);
-  numberRow.appendChild(btn);
+function onDragEnd() {
+  if (!dragCtx) return;
+  const { w, snap } = dragCtx;
+  w.el.classList.remove('dragging');
+  snapPrev.classList.remove('on');
+  if (snap) applySnap(w.id, snap);
+  dragCtx = null;
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragEnd);
+}
+
+/* ---------- RESIZE ---------- */
+let resizeCtx = null;
+function startResize(e, w, dir) {
+  focusWin(w.id);
+  const r = w.el.getBoundingClientRect();
+  resizeCtx = {
+    w, dir,
+    startX: e.clientX, startY: e.clientY,
+    startW: r.width, startH: r.height,
+    startL: parseFloat(w.el.style.left) || 0,
+    startT: parseFloat(w.el.style.top) || 0
+  };
+  if (w.maximized || w.snapped) {
+    w.el.classList.remove('max');
+    w.maximized = false; w.snapped = false;
+  }
+  document.addEventListener('pointermove', onResizeMove);
+  document.addEventListener('pointerup', onResizeEnd);
+  e.preventDefault(); e.stopPropagation();
+}
+function onResizeMove(e) {
+  if (!resizeCtx) return;
+  const c = resizeCtx;
+  const dx = e.clientX - c.startX;
+  const dy = e.clientY - c.startY;
+  const MIN_W = 300, MIN_H = 170;
+  let nw = c.startW, nh = c.startH, nl = c.startL, nt = c.startT;
+
+  if (c.dir.includes('e')) nw = Math.max(MIN_W, c.startW + dx);
+  if (c.dir.includes('s')) nh = Math.max(MIN_H, c.startH + dy);
+  if (c.dir.includes('w')) {
+    nw = Math.max(MIN_W, c.startW - dx);
+    nl = c.startL + (c.startW - nw);
+  }
+  if (c.dir.includes('n')) {
+    nh = Math.max(MIN_H, c.startH - dy);
+    nt = c.startT + (c.startH - nh);
+  }
+
+  c.w.el.style.width = nw + 'px';
+  c.w.el.style.height = nh + 'px';
+  c.w.el.style.left = nl + 'px';
+  c.w.el.style.top = nt + 'px';
+}
+function onResizeEnd() {
+  resizeCtx = null;
+  document.removeEventListener('pointermove', onResizeMove);
+  document.removeEventListener('pointerup', onResizeEnd);
+}
+
+/* ============================================================
+   9. TASKBAR
+   ============================================================ */
+const PINNED = ['explorer', 'browser', 'notepad', 'terminal', 'settings', 'paint', 'calculator', 'music'];
+
+function renderTaskbar() {
+  const c = $('#tbCenter');
+  c.innerHTML = '';
+
+  /* Nút Start */
+  const startBtn = document.createElement('button');
+  startBtn.className = 'tbtn';
+  startBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22"><rect x="0" y="0" width="10" height="10" rx="1.5" fill="#4cc2ff"/><rect x="12" y="0" width="10" height="10" rx="1.5" fill="#4cc2ff"/><rect x="0" y="12" width="10" height="10" rx="1.5" fill="#4cc2ff"/><rect x="12" y="12" width="10" height="10" rx="1.5" fill="#4cc2ff"/></svg>';
+  startBtn.title = 'Bắt đầu';
+  startBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleStart(); });
+  c.appendChild(startBtn);
+
+  /* Tìm kiếm */
+  const searchBtn = document.createElement('button');
+  searchBtn.className = 'tbtn';
+  searchBtn.innerHTML = '🔍';
+  searchBtn.title = 'Tìm kiếm';
+  searchBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openStart();
+    setTimeout(() => $('#startSearch').focus(), 120);
+  });
+  c.appendChild(searchBtn);
+
+  /* Task View */
+  const tvBtn = document.createElement('button');
+  tvBtn.className = 'tbtn';
+  tvBtn.innerHTML = '🗂️';
+  tvBtn.title = 'Chế độ xem tác vụ';
+  tvBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTaskView(); });
+  c.appendChild(tvBtn);
+
+  /* Ứng dụng đã ghim + đang chạy */
+  const running = new Set(Array.from(wins.values()).map(w => w.appId));
+  const shown = new Set();
+  PINNED.forEach(appId => {
+    const app = APPS[appId];
+    if (!app) return;
+    shown.add(appId);
+    c.appendChild(makeTaskBtn(appId, app));
+  });
+  running.forEach(appId => {
+    if (shown.has(appId)) return;
+    const app = APPS[appId];
+    if (!app) return;
+    c.appendChild(makeTaskBtn(appId, app));
+  });
+}
+
+function makeTaskBtn(appId, app) {
+  const b = document.createElement('button');
+  const isRunning = Array.from(wins.values()).some(w => w.appId === appId);
+  const win = Array.from(wins.values()).find(w => w.appId === appId);
+  b.className = 'tbtn' + (isRunning ? ' run' : '') + (state.activeId === (win && win.id) ? ' act' : '');
+  b.innerHTML = app.icon;
+  b.title = app.name;
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!win) { openApp(appId); return; }
+    if (win.minimized) restoreWin(win.id);
+    else if (state.activeId === win.id) minimizeWin(win.id);
+    else focusWin(win.id);
+  });
+  return b;
+}
+
+/* ============================================================
+   10. START MENU
+   ============================================================ */
+let startOpen = false;
+function openStart() {
+  $('#start').classList.add('open');
+  startOpen = true;
+  closePanels(['#quick', '#calendar', '#taskview']);
+}
+function closeStart() {
+  $('#start').classList.remove('open');
+  startOpen = false;
+}
+function toggleStart() {
+  startOpen ? closeStart() : openStart();
+}
+
+function renderStart() {
+  const grid = $('#pinGrid');
+  grid.innerHTML = '';
+  Object.keys(APPS).forEach(id => {
+    const app = APPS[id];
+    const el = document.createElement('button');
+    el.className = 'pin';
+    el.innerHTML = '<div class="em">' + app.icon + '</div><div class="lb">' + esc(app.name) + '</div>';
+    el.addEventListener('click', () => { closeStart(); openApp(id); });
+    grid.appendChild(el);
+  });
+
+  const rec = $('#recList');
+  rec.innerHTML = '';
+  const recents = [
+    { em: '📝', n: 'Ghi chú nhanh.txt', p: 'Desktop' },
+    { em: '🖼️', n: 'hoang-hon.jpg', p: 'Pictures' },
+    { em: '📊', n: 'Kế hoạch.xlsx', p: 'Documents' },
+    { em: '🌐', n: 'Trình duyệt', p: 'Ứng dụng' }
+  ];
+  recents.forEach(r => {
+    const el = document.createElement('button');
+    el.className = 'rec';
+    el.innerHTML = '<div class="em">' + r.em + '</div><div class="tx"><b>' + esc(r.n) + '</b><span>' + esc(r.p) + '</span></div>';
+    el.addEventListener('click', () => { closeStart(); openApp('explorer'); });
+    rec.appendChild(el);
+  });
+}
+
+$('#startSearch').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  $$('#pinGrid .pin').forEach(p => {
+    const name = p.querySelector('.lb').textContent.toLowerCase();
+    p.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+});
+$('#btnAllApps').addEventListener('click', () => {
+  $('#startSearch').value = '';
+  $$('#pinGrid .pin').forEach(p => p.style.display = '');
+  showToast('Tất cả ứng dụng', 'Hiển thị toàn bộ ' + Object.keys(APPS).length + ' ứng dụng.', '📦');
+});
+$('#powerBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  showContextMenu(e.clientX - 180, e.clientY - 130, [
+    { label: 'Ngủ', icon: '🌙', action: () => showToast('Chế độ ngủ', 'Máy đang ngủ đông...', '🌙') },
+    { label: 'Khởi động lại', icon: '🔄', action: () => location.reload() },
+    { label: 'Tắt máy', icon: '⏻', action: () => { closeStart(); $('#lock').style.display = 'flex'; $('#lock').classList.remove('hide'); $('#lockTimeView').style.display = 'flex'; $('#lockLoginView').style.display = 'none'; } }
+  ]);
+});
+$('#startUser').addEventListener('click', () => { closeStart(); openApp('settings'); });
+
+/* ============================================================
+   11. PANELS
+   ============================================================ */
+function closePanels(except = []) {
+  ['#quick', '#calendar', '#taskview'].forEach(sel => {
+    if (except.includes(sel)) return;
+    $(sel).classList.remove('open');
+  });
+}
+function togglePanel(sel) {
+  const el = $(sel);
+  const wasOpen = el.classList.contains('open');
+  closePanels();
+  closeStart();
+  if (!wasOpen) el.classList.add('open');
+}
+
+/* Quick settings */
+const QS_ITEMS = [
+  { id: 'wifi', ic: '📶', lb: 'Wi-Fi', on: true },
+  { id: 'bt', ic: '🔵', lb: 'Bluetooth', on: false },
+  { id: 'plane', ic: '✈️', lb: 'Máy bay', on: false },
+  { id: 'save', ic: '🔋', lb: 'Tiết kiệm pin', on: false },
+  { id: 'night', ic: '🌙', lb: 'Ánh sáng đêm', on: false },
+  { id: 'theme', ic: '🎨', lb: 'Chế độ tối', on: state.theme === 'dark' }
+];
+function renderQuick() {
+  const g = $('#qsGrid');
+  g.innerHTML = '';
+  QS_ITEMS.forEach(it => {
+    const b = document.createElement('button');
+    b.className = 'qs' + (it.on ? ' on' : '');
+    b.innerHTML = '<div class="ic">' + it.ic + '</div>' + it.lb;
+    b.addEventListener('click', () => {
+      if (it.id === 'theme') {
+        state.theme = state.theme === 'dark' ? 'light' : 'dark';
+        applyTheme();
+        it.on = state.theme === 'dark';
+      } else {
+        it.on = !it.on;
+      }
+      renderQuick();
+    });
+    g.appendChild(b);
+  });
+}
+$('#quickToggle').addEventListener('click', (e) => { e.stopPropagation(); togglePanel('#quick'); });
+$('#clockTray').addEventListener('click', (e) => { e.stopPropagation(); togglePanel('#calendar'); });
+$('#brightness').addEventListener('input', (e) => {
+  state.brightness = +e.target.value;
+  desktopEl.style.filter = 'brightness(' + (state.brightness / 100) + ')';
 });
 
-const kwBtn = document.createElement('button');
-kwBtn.className = 'num-btn keyword';
-kwBtn.textContent = '11';
-kwBtn.dataset.id = 11;
-kwBtn.onclick = openKeyword;
-numberRow.appendChild(kwBtn);
+/* Calendar */
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+function renderCalendar() {
+  const months = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+  $('#calTitle').textContent = months[calMonth] + ' ' + calYear;
+  const grid = $('#calGrid');
+  grid.innerHTML = '';
+  ['CN','T2','T3','T4','T5','T6','T7'].forEach(d => {
+    const e = document.createElement('div');
+    e.className = 'wd';
+    e.textContent = d;
+    grid.appendChild(e);
+  });
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
 
-// ===== TRẠNG THÁI =====
-const solved = new Set();
-
-function updateStatus() {
-  document.getElementById('status').textContent = `${solved.size} / 11 solved`;
+  for (let i = first - 1; i >= 0; i--) {
+    const e = document.createElement('div');
+    e.className = 'd other';
+    e.textContent = prevDays - i;
+    grid.appendChild(e);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const e = document.createElement('div');
+    e.className = 'd';
+    if (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear()) e.classList.add('today');
+    e.textContent = d;
+    grid.appendChild(e);
+  }
+  const total = first + daysInMonth;
+  const rest = (7 - (total % 7)) % 7;
+  for (let d = 1; d <= rest; d++) {
+    const e = document.createElement('div');
+    e.className = 'd other';
+    e.textContent = d;
+    grid.appendChild(e);
+  }
 }
+$('#calPrev').addEventListener('click', (e) => {
+  e.stopPropagation();
+  calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+$('#calNext').addEventListener('click', (e) => {
+  e.stopPropagation();
+  calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
 
-// ===== MỞ CÂU HỎI =====
-function openQ(id) {
-  if (solved.has(id)) return;
-  const w = words.find(x => x.id === id);
-  showModal(w.id, w.q, w.options, w.correct, (chosen) => handleAnswer(w, chosen));
+/* Task view */
+function toggleTaskView() {
+  const tv = $('#taskview');
+  const wasOpen = tv.classList.contains('open');
+  closePanels();
+  closeStart();
+  if (wasOpen) return;
+  renderTaskView();
+  tv.classList.add('open');
 }
-
-function openKeyword() {
-  if (solved.has(11)) return;
-  const doneCount = [...solved].filter(x => x <= 10).length;
-  if (doneCount < 10) {
-    showToast('Hãy giải hết 10 câu trước đã!');
+function renderTaskView() {
+  const tv = $('#taskview');
+  tv.innerHTML = '';
+  if (wins.size === 0) {
+    tv.innerHTML = '<div style="color:#fff;font-size:15px;opacity:.7">Không có cửa sổ nào đang mở</div>';
     return;
   }
-  showModal(11, keywordQ.q, keywordQ.options, keywordQ.correct, (chosen) => handleKeyword(chosen));
-}
-
-function showModal(id, qText, options, correctIdx, callback) {
-  document.getElementById('modalNum').textContent = 'Câu ' + id;
-  document.getElementById('qText').textContent = qText;
-  const optsEl = document.getElementById('options');
-  optsEl.innerHTML = '';
-  const fb = document.getElementById('feedback');
-  fb.className = 'feedback';
-  fb.textContent = '';
-
-  options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option';
-    btn.innerHTML = `<span class="badge">${String.fromCharCode(65 + i)}</span><span>${opt}</span>`;
-    btn.onclick = () => {
-      [...optsEl.children].forEach(b => b.onclick = null);
-      callback(i);
-    };
-    optsEl.appendChild(btn);
+  wins.forEach(w => {
+    const app = APPS[w.appId];
+    const wrap = document.createElement('div');
+    wrap.className = 'tv-wrap';
+    wrap.innerHTML =
+      '<div class="tv-card">' +
+        '<div class="tv-head">' + app.icon + ' ' + esc(app.name) + '</div>' +
+        '<div class="tv-body">' + app.icon + '</div>' +
+      '</div>' +
+      '<button class="tv-close">✕</button>';
+    wrap.querySelector('.tv-card').addEventListener('click', () => {
+      $('#taskview').classList.remove('open');
+      if (w.minimized) restoreWin(w.id);
+      focusWin(w.id);
+    });
+    wrap.querySelector('.tv-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeWin(w.id);
+      renderTaskView();
+    });
+    tv.appendChild(wrap);
   });
-
-  void optsEl.offsetWidth;
-  document.getElementById('overlay').classList.add('show');
 }
 
-function closeModal() {
-  document.getElementById('overlay').classList.remove('show');
-}
-
-// ===== XỬ LÝ TRẢ LỜI =====
-function handleAnswer(w, chosen) {
-  const optsEl = document.getElementById('options');
-  const fb = document.getElementById('feedback');
-
-  if (chosen === w.correct) {
-    optsEl.children[chosen].classList.add('correct');
-    fb.className = 'feedback show ok';
-    fb.textContent = '✓ Chính xác!';
-    setTimeout(() => {
-      closeModal();
-      revealWord(w);
-      solved.add(w.id);
-      document.querySelector(`.num-btn[data-id="${w.id}"]`).classList.add('done');
-      updateStatus();
-      if (solved.size === 10) {
-        document.querySelector('.num-btn.keyword').classList.add('pulse');
-      }
-    }, 900);
-  } else {
-    optsEl.children[chosen].classList.add('wrong');
-    optsEl.children[w.correct].classList.add('correct');
-    fb.className = 'feedback show no';
-    fb.textContent = '✗ Sai rồi. Mời bạn khác trả lời!';
-    setTimeout(() => closeModal(), 1500);
-  }
-}
-
-function handleKeyword(chosen) {
-  const optsEl = document.getElementById('options');
-  const fb = document.getElementById('feedback');
-
-  if (chosen === keywordQ.correct) {
-    optsEl.children[chosen].classList.add('correct');
-    fb.className = 'feedback show ok';
-    fb.textContent = '✓ Chính xác!';
-    setTimeout(() => {
-      closeModal();
-      highlightKeywordColumn();
-      solved.add(11);
-      document.querySelector('.num-btn.keyword').classList.add('done');
-      document.querySelector('.num-btn.keyword').classList.remove('pulse');
-      updateStatus();
-      setTimeout(() => document.getElementById('win').classList.add('show'), 1400);
-    }, 900);
-  } else {
-    optsEl.children[chosen].classList.add('wrong');
-    optsEl.children[keywordQ.correct].classList.add('correct');
-    fb.className = 'feedback show no';
-    fb.textContent = '✗ Sai rồi. Thử lại!';
-    setTimeout(() => closeModal(), 1500);
-  }
-}
-
-// ===== HIỆN CHỮ LÊN LƯỚI =====
-function revealWord(w) {
-  for (let i = 0; i < w.text.length; i++) {
-    const c = w.col + i;
-    const cell = document.querySelector(`.cell[data-key="${w.row},${c}"]`);
-    if (cell) {
-      setTimeout(() => cell.classList.add('revealed'), i * 70);
-    }
-  }
-}
-
-function highlightKeywordColumn() {
-  for (let r = 0; r < totalRows; r++) {
-    const cell = document.querySelector(`.cell[data-key="${r},5"]`);
-    if (cell) {
-      setTimeout(() => cell.classList.add('revealed', 'correct-highlight'), r * 100);
-    }
-  }
-}
-
-// ===== RESET =====
-function resetGame() {
-  solved.clear();
-  document.querySelectorAll('.cell').forEach(c => {
-    c.classList.remove('revealed', 'correct-highlight');
-  });
-  document.querySelectorAll('.num-btn').forEach(b => {
-    b.classList.remove('done', 'pulse');
-  });
-  document.getElementById('win').classList.remove('show');
-  updateStatus();
-}
-
-// ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-// Đóng khi bấm ra ngoài
-document.getElementById('overlay').addEventListener('click', e => {
-  if (e.target.id === 'overlay') closeModal();
+/* Đóng panel khi click ngoài */
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#start') && !e.target.closest('#taskbar')) closeStart();
+  if (!e.target.closest('.panel') && !e.target.closest('#taskbar')) closePanels();
+  if (e.target.id === 'taskview') closePanels();
 });
 
-// Khởi tạo
-updateStatus();
+/* Thông báo */
+$('#bell').addEventListener('click', (e) => {
+  e.stopPropagation();
+  showToast('Trung tâm thông báo', 'Bạn không có thông báo mới nào.', '🔔');
+});
+
+/* ============================================================
+   12. ĐỊNH NGHĨA ỨNG DỤNG
+   ============================================================ */
+const APPS = {};
+
+/* ---------------- NOTEPAD ---------------- */
+APPS.notepad = {
+  name: 'Notepad', icon: '📝', w: 780, h: 540,
+  build(body) {
+    body.innerHTML =
+      '<div class="np-bar">' +
+        '<button class="np-btn" data-a="new">📄 Mới</button>' +
+        '<button class="np-btn" data-a="open">📂 Mở</button>' +
+        '<button class="np-btn" data-a="save">💾 Lưu</button>' +
+        '<button class="np-btn" data-a="clear">🗑️ Xóa hết</button>' +
+        '<span class="np-info"></span>' +
+      '</div>' +
+      '<textarea class="np-text" spellcheck="false" placeholder="Bắt đầu nhập văn bản tại đây..."></textarea>';
+
+    const ta = body.querySelector('.np-text');
+    const info = body.querySelector('.np-info');
+    const upd = () => {
+      const words = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0;
+      info.textContent = ta.value.length + ' ký tự · ' + words + ' từ';
+    };
+    ta.value = localStorage.getItem('win_notepad') || 'Chào mừng đến với Windows 11 Web!\n\nĐây là ứng dụng Notepad.\nBạn có thể nhập văn bản và nhấn "Lưu" để lưu vào bộ nhớ trình duyệt.';
+    upd();
+    ta.addEventListener('input', upd);
+
+    body.querySelectorAll('.np-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const a = b.dataset.a;
+        if (a === 'new' || a === 'clear') { ta.value = ''; upd(); }
+        if (a === 'open') { ta.value = localStorage.getItem('win_notepad') || ''; upd(); }
+        if (a === 'save') {
+          localStorage.setItem('win_notepad', ta.value);
+          info.textContent = '✓ Đã lưu';
+          showToast('Notepad', 'Văn bản đã được lưu vào bộ nhớ trình duyệt.', '💾');
+          setTimeout(upd, 1400);
+        }
+      });
+    });
+    setTimeout(() => ta.focus(), 100);
+  }
+};
+
+/* ---------------- CALCULATOR ---------------- */
+APPS.calculator = {
+  name: 'Máy tính', icon: '🧮', w: 340, h: 540,
+  build(body, win) {
+    body.innerHTML =
+      '<div class="calc">' +
+        '<div class="calc-disp"><div class="calc-hist"></div><div class="calc-main">0</div></div>' +
+        '<div class="calc-keys">' +
+          '<button data-k="C" class="op">C</button>' +
+          '<button data-k="back" class="op">⌫</button>' +
+          '<button data-k="%" class="op">%</button>' +
+          '<button data-k="/" class="op">÷</button>' +
+          '<button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="*" class="op">×</button>' +
+          '<button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="-" class="op">−</button>' +
+          '<button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="+" class="op">+</button>' +
+          '<button data-k="neg">±</button><button data-k="0">0</button><button data-k=".">.</button><button data-k="=" class="eq">=</button>' +
+        '</div>' +
+      '</div>';
+
+    const disp = body.querySelector('.calc-main');
+    const hist = body.querySelector('.calc-hist');
+    let expr = '';
+
+    const show = () => {
+      disp.textContent = expr === '' ? '0' : expr.replace(/\*/g, '×').replace(/\//g, '÷').replace(/-/g, '−');
+    };
+
+    const calc = () => {
+      try {
+        let safe = expr.replace(/%/g, '/100');
+        safe = safe.replace(/[^0-9+\-*/.()]/g, '');
+        if (!safe) return '';
+        // eslint-disable-next-line no-new-func
+        const r = Function('"use strict";return (' + safe + ')')();
+        if (!isFinite(r) || isNaN(r)) return 'Lỗi';
+        const rounded = Math.round(r * 1e12) / 1e12;
+        return String(rounded);
+      } catch (e) { return 'Lỗi'; }
+    };
+
+    function press(k) {
+      if (k === 'C') { expr = ''; hist.textContent = ''; show(); return; }
+      if (k === 'back') { expr = expr.slice(0, -1); show(); return; }
+      if (k === 'neg') { expr = expr.startsWith('-') ? expr.slice(1) : '-' + expr; show(); return; }
+      if (k === '=') {
+        if (!expr) return;
+        const res = calc();
+        hist.textContent = expr.replace(/\*/g, '×').replace(/\//g, '÷') + ' =';
+        expr = res === 'Lỗi' ? '' : res;
+        if (res === 'Lỗi') hist.textContent = 'Biểu thức không hợp lệ';
+        show();
+        return;
+      }
+      if (/[0-9.]/.test(k)) {
+        /* tránh nhiều dấu chấm trong 1 số */
+        if (k === '.') {
+          const parts = expr.split(/[+\-*/%()]/);
+          if (parts[parts.length - 1].includes('.')) return;
+          if (expr === '' || /[+\-*/%]$/.test(expr)) expr += '0';
+        }
+        expr += k;
+      } else {
+        if (expr === '' && k !== '-') return;
+        if (/[+\-*/%]$/.test(expr)) expr = expr.slice(0, -1) + k;
+        else expr += k;
+      }
+      show();
+    }
+
+    body.querySelectorAll('.calc-keys button').forEach(b => {
+      b.addEventListener('click', () => press(b.dataset.k));
+    });
+
+    /* Bàn phím */
+    document.addEventListener('keydown', function handler(e) {
+      if (state.activeId !== win.id) return;
+      if (!document.body.contains(body)) { document.removeEventListener('keydown', handler); return; }
+      const k = e.key;
+      if (/^[0-9]$/.test(k)) press(k);
+      else if (k === '+') press('+');
+      else if (k === '-') press('-');
+      else if (k === '*') press('*');
+      else if (k === '/') { e.preventDefault(); press('/'); }
+      else if (k === '.') press('.');
+      else if (k === '%') press('%');
+      else if (k === 'Enter' || k === '=') { e.preventDefault(); press('='); }
+      else if (k === 'Backspace') press('back');
+      else if (k === 'Escape') press('C');
+    });
+    show();
+  }
+};
+
+/* ---------------- FILE EXPLORER ---------------- */
+APPS.explorer = {
+  name: 'File Explorer', icon: '📁', w: 900, h: 580,
+  build(body, win, opts) {
+    body.innerHTML =
+      '<div class="fe">' +
+        '<div class="fe-side"></div>' +
+        '<div class="fe-main">' +
+          '<div class="fe-top">' +
+            '<button class="fe-navbtn" data-n="back">‹</button>' +
+            '<button class="fe-navbtn" data-n="fwd">›</button>' +
+            '<button class="fe-navbtn" data-n="up">↑</button>' +
+            '<div class="fe-crumb"></div>' +
+            '<button class="fe-navbtn" data-n="refresh">🔄</button>' +
+          '</div>' +
+          '<div class="fe-items"></div>' +
+          '<div class="fe-status"></div>' +
+        '</div>' +
+      '</div>';
+
+    let path = [];              // mảng tên thư mục
+    const history = [[]];
+    let hIndex = 0;
+
+    const itemsEl = body.querySelector('.fe-items');
+    const crumbEl = body.querySelector('.fe-crumb');
+    const statusEl = body.querySelector('.fe-status');
+
+    function findNode(p) {
+      let node = FS;
+      for (const name of p) {
+        if (!node.children) return null;
+        const next = node.children.find(c => c.name === name);
+        if (!next) return null;
+        node = next;
+      }
+      return node;
+    }
+
+    function iconFor(node) {
+      if (node.type === 'drive') return '💽';
+      if (node.type === 'folder') return '📁';
+      const n = node.name.toLowerCase();
+      if (/\.(png|jpg|jpeg|gif|bmp|svg)$/.test(n)) return '🖼️';
+      if (/\.(mp3|wav|flac)$/.test(n)) return '🎵';
+      if (/\.(mp4|avi|mkv|mov)$/.test(n)) return '🎬';
+      if (/\.(txt|md|log)$/.test(n)) return '📄';
+      if (/\.(doc|docx)$/.test(n)) return '📘';
+      if (/\.(xls|xlsx|csv)$/.test(n)) return '📗';
+      if (/\.(ppt|pptx)$/.test(n)) return '📙';
+      if (/\.(zip|rar|7z)$/.test(n)) return '🗜️';
+      if (/\.(exe|msi)$/.test(n)) return '⚙️';
+      if (/\.(html|css|js|json|xml)$/.test(n)) return '🧾';
+      return '📄';
+    }
+
+    function renderSide() {
+      const side = body.querySelector('.fe-side');
+      side.innerHTML = '<h4>Truy cập nhanh</h4>';
+      const quick = [
+        { n: 'This PC', ic: '🖥️', p: [] },
+        { n: 'Desktop', ic: '🖼️', p: ['Desktop'] },
+        { n: 'Documents', ic: '📄', p: ['Documents'] },
+        { n: 'Downloads', ic: '⬇️', p: ['Downloads'] },
+        { n: 'Pictures', ic: '🌄', p: ['Pictures'] },
+        { n: 'Music', ic: '🎵', p: ['Music'] },
+        { n: 'Videos', ic: '🎬', p: ['Videos'] },
+        { n: 'Ổ đĩa C:', ic: '💽', p: ['Ổ đĩa C:'] }
+      ];
+      quick.forEach(q => {
+        const b = document.createElement('button');
+        b.className = 'fe-nav' + (JSON.stringify(path) === JSON.stringify(q.p) ? ' on' : '');
+        b.innerHTML = '<span>' + q.ic + '</span><span>' + esc(q.n) + '</span>';
+        b.addEventListener('click', () => navigate(q.p));
+        side.appendChild(b);
+      });
+    }
+
+    function renderCrumb() {
+      crumbEl.innerHTML = '';
+      const parts = ['This PC'].concat(path);
+      parts.forEach((p, i) => {
+        const s = document.createElement('span');
+        s.textContent = p;
+        s.addEventListener('click', () => navigate(path.slice(0, i)));
+        crumbEl.appendChild(s);
+        if (i < parts.length - 1) {
+          const sep = document.createElement('i');
+          sep.textContent = '›';
+          crumbEl.appendChild(sep);
+        }
+      });
+    }
+
+    function render() {
+      const node = findNode(path);
+      itemsEl.innerHTML = '';
+      if (!node || !node.children) {
+        itemsEl.innerHTML = '<div class="empty-state"><div class="big">📂</div>Thư mục trống</div>';
+        statusEl.textContent = '0 mục';
+        return;
+      }
+      const items = node.children.slice().sort((a, b) => {
+        if (a.type === 'folder' && b.type !== 'folder') return -1;
+        if (a.type !== 'folder' && b.type === 'folder') return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      if (items.length === 0) {
+        itemsEl.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="big">📂</div>Thư mục này trống</div>';
+      }
+
+      items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'fe-item';
+        el.innerHTML = '<div class="em">' + iconFor(item) + '</div><div class="nm">' + esc(item.name) + '</div>';
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          $$('.fe-item', itemsEl).forEach(x => x.classList.remove('sel'));
+          el.classList.add('sel');
+        });
+        el.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          if (item.type === 'folder' || item.type === 'drive') {
+            navigate(path.concat(item.name));
+          } else {
+            showToast('Mở tệp', item.name + ' (' + (item.size || '—') + ')', iconFor(item));
+          }
+        });
+        el.addEventListener('contextmenu', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          $$('.fe-item', itemsEl).forEach(x => x.classList.remove('sel'));
+          el.classList.add('sel');
+          showContextMenu(e.clientX, e.clientY, [
+            { label: 'Mở', icon: '📂', action: () => {
+              if (item.type === 'folder') navigate(path.concat(item.name));
+              else showToast('Mở tệp', item.name, '📄');
+            }},
+            { label: 'Sao chép', icon: '📋', action: () => showToast('Đã sao chép', item.name, '📋') },
+            { label: 'Đổi tên', icon: '✏️', action: () => showToast('Không khả dụng', 'Môi trường giả lập chỉ đọc.', '⚠️') },
+            { sep: true },
+            { label: 'Xóa', icon: '🗑️', action: () => showToast('Đã xóa', item.name, '🗑️') },
+            { label: 'Thuộc tính', icon: 'ℹ️', action: () => showToast('Thuộc tính', item.name + ' — ' + (item.size || 'Thư mục'), 'ℹ️') }
+          ]);
+        });
+        itemsEl.appendChild(el);
+      });
+
+      const folders = items.filter(i => i.type === 'folder' || i.type === 'drive').length;
+      const files = items.length - folders;
+      statusEl.textContent = items.length + ' mục  ·  ' + folders + ' thư mục, ' + files + ' tệp';
+
+      renderCrumb();
+      renderSide();
+    }
+
+    function navigate(newPath) {
+      path = newPath.slice();
+      history.splice(hIndex + 1);
+      history.push(path.slice());
+      hIndex = history.length - 1;
+      render();
+    }
+
+    body.querySelector('[data-n="back"]').addEventListener('click', () => {
+      if (hIndex > 0) { hIndex--; path = history[hIndex].slice(); render(); }
+    });
+    body.querySelector('[data-n="fwd"]').addEventListener('click', () => {
+      if (hIndex < history.length - 1) { hIndex++; path = history[hIndex].slice(); render(); }
+    });
+    body.querySelector('[data-n="up"]').addEventListener('click', () => {
+      if (path.length > 0) navigate(path.slice(0, -1));
+    });
+    body.querySelector('[data-n="refresh"]').addEventListener('click', render);
+
+    itemsEl.addEventListener('click', () => $$('.fe-item', itemsEl).forEach(x => x.classList.remove('sel')));
+
+    render();
+  }
+};
+
+/* ---------------- TERMINAL ---------------- */
+APPS.terminal = {
+  name: 'Terminal', icon: '⌨️', w: 780, h: 480,
+  build(body, win) {
+    body.style.overflow = 'hidden';
+    body.innerHTML =
+      '<div class="term">' +
+        '<div class="term-out"></div>' +
+        '<div class="term-line">' +
+          '<span class="term-prompt">C:\\Users\\Guest&gt;</span>' +
+          '<input class="term-in" spellcheck="false" autocomplete="off" />' +
+        '</div>' +
+      '</div>';
+
+    const termEl = body.querySelector('.term');
+    const out = body.querySelector('.term-out');
+    const input = body.querySelector('.term-in');
+
+    let cwd = 'C:\\Users\\Guest';
+    const historyCmds = [];
+    let histIdx = -1;
+
+    function print(html, cls) {
+      const d = document.createElement('div');
+      if (cls) d.className = cls;
+      d.innerHTML = html;
+      out.appendChild(d);
+      termEl.scrollTop = termEl.scrollHeight;
+    }
+
+    print('<span class="info">Microsoft Windows [Phiên bản 10.0.22631.0]</span>');
+    print('<span class="info">(c) Microsoft Corporation. Mọi quyền được bảo lưu.</span>');
+    print('&nbsp;');
+    print('Nhập <span class="warn">help</span> để xem danh sách lệnh.');
+    print('&nbsp;');
+
+    const COMMANDS = {
+      help() {
+        print('<span class="warn">Danh sách lệnh khả dụng:</span>');
+        const list = [
+          ['help', 'Hiển thị trợ giúp này'],
+          ['ver', 'Xem phiên bản hệ điều hành'],
+          ['date', 'Xem ngày hiện tại'],
+          ['time', 'Xem giờ hiện tại'],
+          ['whoami', 'Xem tên người dùng'],
+          ['dir', 'Liệt kê nội dung thư mục'],
+          ['cd &lt;thư mục&gt;', 'Chuyển thư mục'],
+          ['echo &lt;văn bản&gt;', 'In ra văn bản'],
+          ['ipconfig', 'Xem cấu hình mạng'],
+          ['systeminfo', 'Thông tin hệ thống'],
+          ['color', 'Đổi màu chữ ngẫu nhiên'],
+          ['calc', 'Mở Máy tính'],
+          ['notepad', 'Mở Notepad'],
+          ['explorer', 'Mở File Explorer'],
+          ['cls', 'Xóa màn hình'],
+          ['exit', 'Đóng Terminal']
+        ];
+        list.forEach(([c, d]) => print('&nbsp;&nbsp;<span class="ok">' + c.padEnd(22, '&nbsp;') + '</span> ' + d));
+      },
+      ver() { print('Microsoft Windows [Phiên bản 10.0.22631.0] — Windows 11 Web Simulator'); },
+      date() { print('Ngày hiện tại: ' + new Date().toLocaleDateString('vi-VN')); },
+      time() { print('Giờ hiện tại: ' + new Date().toLocaleTimeString('vi-VN')); },
+      whoami() { print('desktop-web\\guest'); },
+      dir() {
+        print(' Thư mục: ' + cwd);
+        print('&nbsp;');
+        const names = ['Desktop', 'Documents', 'Downloads', 'Pictures', 'Music', 'Videos'];
+        names.forEach(n => {
+          print('  &lt;DIR&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + n);
+        });
+        print('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + names.length + ' thư mục');
+        print('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 tệp');
+      },
+      cd(args) {
+        if (!args) { print(cwd); return; }
+        if (args === '..') {
+          const parts = cwd.split('\\');
+          if (parts.length > 1) parts.pop();
+          cwd = parts.join('\\') || 'C:\\';
+        } else if (args === '\\' || args === '/') {
+          cwd = 'C:\\';
+        } else {
+          cwd = cwd.replace(/\\$/, '') + '\\' + args;
+        }
+        print('Đã chuyển đến: ' + cwd);
+      },
+      echo(args) { print(esc(args)); },
+      ipconfig() {
+        print('&nbsp;');
+        print('Cấu hình IP Windows');
+        print('&nbsp;');
+        print('Bộ điều hợp Ethernet:');
+        print('&nbsp;&nbsp;&nbsp;IPv4 Address. . . . . . . . . . . : 192.168.1.100');
+        print('&nbsp;&nbsp;&nbsp;Subnet Mask . . . . . . . . . . . : 255.255.255.0');
+        print('&nbsp;&nbsp;&nbsp;Default Gateway . . . . . . . . . : 192.168.1.1');
+      },
+      systeminfo() {
+        print('Tên máy chủ:        DESKTOP-WEB');
+        print('Hệ điều hành:       Windows 11 Pro (Web Simulator)');
+        print('Phiên bản:          10.0.22631 Build 22631');
+        print('Nhà sản xuất:       JavaScript Engine');
+        print('Bộ xử lý:           ' + (navigator.hardwareConcurrency || 4) + ' lõi ảo');
+        print('Bộ nhớ vật lý:      ' + (navigator.deviceMemory || 8) + ' GB (mô phỏng)');
+        print('Ngôn ngữ:           ' + navigator.language);
+        print('Độ phân giải:       ' + screen.width + 'x' + screen.height);
+      },
+      color() {
+        const colors = ['ok', 'err', 'info', 'warn'];
+        const c = colors[Math.floor(Math.random() * colors.length)];
+        print('<span class="' + c + '">Màu chữ đã được thay đổi!</span>');
+      },
+      calc() { openApp('calculator'); print('Đang mở Máy tính...', 'info'); },
+      notepad() { openApp('notepad'); print('Đang mở Notepad...', 'info'); },
+      explorer() { openApp('explorer'); print('Đang mở File Explorer...', 'info'); },
+      cls() { out.innerHTML = ''; },
+      exit() { print('Đang đóng Terminal...', 'info'); setTimeout(() => closeWin(win.id), 400); }
+    };
+
+    function run(raw) {
+      const line = raw.trim();
+      print('<span class="term-prompt">' + cwd + '&gt;</span> ' + esc(raw));
+      if (!line) return;
+      historyCmds.push(line);
+      histIdx = historyCmds.length;
+
+      const parts = line.split(/\s+/);
+      const cmd = parts[0].toLowerCase();
+      const args = line.slice(parts[0].length).trim();
+
+      if (COMMANDS[cmd]) {
+        try { COMMANDS[cmd](args); }
+        catch (e) { print('Lỗi khi thực thi lệnh.', 'err'); }
+      } else {
+        print("'" + esc(parts[0]) + "' không được nhận diện là lệnh nội bộ hoặc bên ngoài,", 'err');
+        print('chương trình có thể thực thi hoặc tệp bó.', 'err');
+      }
+      print('&nbsp;');
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const v = input.value;
+        input.value = '';
+        run(v);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (histIdx > 0) { histIdx--; input.value = historyCmds[histIdx] || ''; }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (histIdx < historyCmds.length - 1) { histIdx++; input.value = historyCmds[histIdx] || ''; }
+        else { histIdx = historyCmds.length; input.value = ''; }
+      }
+    });
+
+    termEl.addEventListener('click', () => input.focus());
+    setTimeout(() => input.focus(), 120);
+  }
+};
+
+/* ---------------- SETTINGS ---------------- */
+APPS.settings = {
+  name: 'Cài đặt', icon: '⚙️', w: 880, h: 600,
+  build(body, win, opts) {
+    body.innerHTML =
+      '<div class="set">' +
+        '<div class="set-side">' +
+          '<div class="set-user"><span class="av">👤</span><div class="tx"><b>Người dùng</b><span>guest@desktop-web</span></div></div>' +
+        '</div>' +
+        '<div class="set-main"></div>' +
+      '</div>';
+
+    const side = body.querySelector('.set-side');
+    const main = body.querySelector('.set-main');
+
+    const PAGES = [
+      { id: 'system', ic: '🖥️', name: 'Hệ thống' },
+      { id: 'personal', ic: '🎨', name: 'Cá nhân hóa' },
+      { id: 'apps', ic: '📦', name: 'Ứng dụng' },
+      { id: 'time', ic: '🕐', name: 'Thời gian & Ngôn ngữ' },
+      { id: 'about', ic: 'ℹ️', name: 'Giới thiệu' }
+    ];
+
+    let current = opts && opts.page ? opts.page : 'personal';
+
+    PAGES.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'set-nav';
+      b.innerHTML = '<span>' + p.ic + '</span><span>' + esc(p.name) + '</span>';
+      b.dataset.page = p.id;
+      b.addEventListener('click', () => { current = p.id; render(); });
+      side.appendChild(b);
+    });
+
+    function render() {
+      $$('.set-nav', side).forEach(b => b.classList.toggle('on', b.dataset.page === current));
+
+      if (current === 'personal') {
+        main.innerHTML =
+          '<h2>🎨 Cá nhân hóa</h2>' +
+          '<div class="set-card">' +
+            '<div class="set-row"><div><div class="lb">Chế độ màu</div><div class="sb">Chọn giữa giao diện sáng và tối</div></div>' +
+              '<div class="seg" id="themeSeg"><button data-t="light">Sáng</button><button data-t="dark">Tối</button></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="lb" style="font-size:13.5px;font-weight:600">Hình nền</div>' +
+            '<div class="sb" style="font-size:11.5px;color:var(--dim);margin-top:3px">Chọn một hình nền cho màn hình nền</div>' +
+            '<div class="wall-grid" id="wallGrid"></div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="lb" style="font-size:13.5px;font-weight:600">Màu nhấn</div>' +
+            '<div class="sb" style="font-size:11.5px;color:var(--dim);margin-top:3px">Màu này áp dụng cho thanh tác vụ và các điểm nhấn</div>' +
+            '<div class="acc-grid" id="accGrid"></div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="set-row"><div><div class="lb">Độ sáng màn hình</div><div class="sb">Điều chỉnh độ sáng của màn hình nền</div></div>' +
+              '<input type="range" id="setBright" min="30" max="100" value="' + state.brightness + '" style="width:180px;accent-color:var(--accent)" />' +
+            '</div>' +
+          '</div>';
+
+        /* Theme */
+        $$('#themeSeg button', main).forEach(b => {
+          b.classList.toggle('on', b.dataset.t === state.theme);
+          b.addEventListener('click', () => {
+            state.theme = b.dataset.t;
+            applyTheme();
+            renderQuick();
+            render();
+            showToast('Đã đổi giao diện', 'Chế độ ' + (state.theme === 'dark' ? 'tối' : 'sáng') + ' đã được bật.', '🎨');
+          });
+        });
+
+        /* Wallpaper */
+        const wg = $('#wallGrid', main);
+        WALLPAPERS.forEach((wp, i) => {
+          const d = document.createElement('div');
+          d.className = 'wall-th' + (i === state.wallpaper ? ' on' : '');
+          d.style.backgroundImage = wp;
+          d.title = 'Hình nền ' + (i + 1);
+          d.addEventListener('click', () => {
+            state.wallpaper = i;
+            applyWallpaper();
+            $$('.wall-th', wg).forEach(x => x.classList.remove('on'));
+            d.classList.add('on');
+            showToast('Đã đổi hình nền', 'Hình nền ' + (i + 1), '🖼️');
+          });
+          wg.appendChild(d);
+        });
+
+        /* Accent */
+        const ag = $('#accGrid', main);
+        ACCENTS.forEach(c => {
+          const d = document.createElement('div');
+          d.className = 'acc-dot' + (c === state.accent ? ' on' : '');
+          d.style.background = c;
+          d.addEventListener('click', () => {
+            state.accent = c;
+            applyTheme();
+            $$('.acc-dot', ag).forEach(x => x.classList.remove('on'));
+            d.classList.add('on');
+          });
+          ag.appendChild(d);
+        });
+
+        /* Brightness */
+        $('#setBright', main).addEventListener('input', (e) => {
+          state.brightness = +e.target.value;
+          desktopEl.style.filter = 'brightness(' + (state.brightness / 100) + ')';
+          $('#brightness').value = state.brightness;
+        });
+      }
+
+      else if (current === 'system') {
+        main.innerHTML =
+          '<h2>🖥️ Hệ thống</h2>' +
+          '<div class="set-card">' +
+            '<div class="set-row"><div><div class="lb">Hiệu năng</div><div class="sb">Chế độ năng lượng của thiết bị</div></div>' +
+              '<div class="seg"><button class="on">Cân bằng</button><button>Hiệu năng cao</button></div></div>' +
+            '<div class="set-row"><div><div class="lb">Lưu trữ</div><div class="sb">Dung lượng trống</div></div>' +
+              '<div style="width:200px"><div class="tm-bar"><i style="width:62%"></i></div><div class="sb" style="margin-top:5px">318 GB / 512 GB đã dùng</div></div></div>' +
+            '<div class="set-row"><div><div class="lb">Âm thanh</div><div class="sb">Âm lượng hệ thống</div></div>' +
+              '<input type="range" min="0" max="100" value="65" style="width:180px;accent-color:var(--accent)" /></div>' +
+            '<div class="set-row"><div><div class="lb">Nguồn điện</div><div class="sb">Pin còn 87%, đang sạc</div></div>' +
+              '<div style="font-size:22px">🔋</div></div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="lb" style="font-weight:600;margin-bottom:8px">Nhiệt độ & Quạt</div>' +
+            '<div class="set-row"><div class="lb">Nhiệt độ CPU</div><div>48°C</div></div>' +
+            '<div class="set-row"><div class="lb">Tốc độ quạt</div><div>1240 RPM</div></div>' +
+          '</div>';
+      }
+
+      else if (current === 'apps') {
+        main.innerHTML = '<h2>📦 Ứng dụng đã cài đặt</h2><div id="appList"></div>';
+        const list = $('#appList', main);
+        Object.keys(APPS).forEach(id => {
+          const app = APPS[id];
+          const card = document.createElement('div');
+          card.className = 'set-card';
+          card.style.display = 'flex';
+          card.style.alignItems = 'center';
+          card.style.gap = '14px';
+          card.innerHTML =
+            '<div style="font-size:28px">' + app.icon + '</div>' +
+            '<div style="flex:1"><div class="lb" style="font-weight:600">' + esc(app.name) + '</div>' +
+            '<div class="sb">Ứng dụng hệ thống · ' + (Math.random() * 40 + 2).toFixed(1) + ' MB</div></div>' +
+            '<button class="app-btn">Mở</button>';
+          card.querySelector('.app-btn').addEventListener('click', () => openApp(id));
+          list.appendChild(card);
+        });
+      }
+
+      else if (current === 'time') {
+        const d = new Date();
+        main.innerHTML =
+          '<h2>🕐 Thời gian & Ngôn ngữ</h2>' +
+          '<div class="set-card">' +
+            '<div class="set-row"><div><div class="lb">Ngày giờ hiện tại</div><div class="sb">' + d.toLocaleString('vi-VN') + '</div></div><div style="font-size:24px">🕐</div></div>' +
+            '<div class="set-row"><div><div class="lb">Múi giờ</div><div class="sb">(UTC+07:00) Bangkok, Hanoi, Jakarta</div></div></div>' +
+            '<div class="set-row"><div><div class="lb">Ngôn ngữ hiển thị</div><div class="sb">Tiếng Việt (Việt Nam)</div></div><button class="app-btn">Thay đổi</button></div>' +
+            '<div class="set-row"><div><div class="lb">Định dạng 24 giờ</div><div class="sb">Sử dụng định dạng 24 giờ</div></div><div class="seg"><button class="on">Bật</button><button>Tắt</button></div></div>' +
+          '</div>';
+      }
+
+      else {
+        main.innerHTML =
+          '<h2>ℹ️ Giới thiệu</h2>' +
+          '<div style="display:flex;align-items:center;gap:20px;margin-bottom:22px">' +
+            '<div style="width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#4cc2ff,#0078d4);display:grid;place-items:center;font-size:34px">🪟</div>' +
+            '<div><div style="font-size:19px;font-weight:600">Windows 11 Web Simulator</div>' +
+            '<div style="color:var(--dim);font-size:12.5px;margin-top:4px">Phiên bản 1.0.0 · HTML + CSS + JavaScript thuần</div></div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="set-row"><div class="lb">Tên thiết bị</div><div>DESKTOP-WEB</div></div>' +
+            '<div class="set-row"><div class="lb">Bộ xử lý</div><div>' + (navigator.hardwareConcurrency || 4) + ' lõi ảo</div></div>' +
+            '<div class="set-row"><div class="lb">RAM</div><div>' + (navigator.deviceMemory || 8) + ' GB</div></div>' +
+            '<div class="set-row"><div class="lb">Độ phân giải</div><div>' + screen.width + ' × ' + screen.height + '</div></div>' +
+            '<div class="set-row"><div class="lb">Trình duyệt</div><div>' + esc(navigator.userAgent.split(') ')[0].split('(')[0]) + '</div></div>' +
+            '<div class="set-row"><div class="lb">Nền tảng</div><div>' + esc(navigator.platform) + '</div></div>' +
+            '<div class="set-row"><div class="lb">Ngôn ngữ</div><div>' + esc(navigator.language) + '</div></div>' +
+          '</div>' +
+          '<div class="set-card">' +
+            '<div class="lb" style="font-weight:600;margin-bottom:6px">Về dự án</div>' +
+            '<div class="sb" style="line-height:1.7">Đây là một bản mô phỏng giao diện Windows 11 được viết hoàn toàn bằng HTML, CSS và JavaScript trong một tệp duy nhất. Toàn bộ cửa sổ, ứng dụng và tương tác đều chạy trực tiếp trên trình duyệt — không cần cài đặt gì thêm.</div>' +
+          '</div>';
+      }
+    }
+
+    render();
+  }
+};
+
+/* ---------------- PAINT ---------------- */
+APPS.paint = {
+  name: 'Paint', icon: '🎨', w: 860, h: 580,
+  build(body) {
+    body.style.overflow = 'hidden';
+    body.innerHTML =
+      '<div class="paint">' +
+        '<div class="paint-tools">' +
+          '<input type="color" class="p-color" value="#0078d4" title="Màu vẽ" />' +
+          '<input type="range" class="p-size" min="1" max="50" value="4" title="Cỡ bút" />' +
+          '<span class="p-size-label" style="font-size:12px;color:var(--dim);min-width:38px">4 px</span>' +
+          '<button class="app-btn" data-t="brush">🖌️ Bút</button>' +
+          '<button class="app-btn" data-t="eraser">🧽 Tẩy</button>' +
+          '<button class="app-btn" data-t="clear">🗑️ Xóa hết</button>' +
+          '<button class="app-btn" data-t="save">💾 Tải PNG</button>' +
+        '</div>' +
+        '<div class="paint-wrap"><canvas class="p-canvas"></canvas></div>' +
+      '</div>';
+
+    const wrap = body.querySelector('.paint-wrap');
+    const canvas = body.querySelector('.p-canvas');
+    const ctx = canvas.getContext('2d');
+    const colorInput = body.querySelector('.p-color');
+    const sizeInput = body.querySelector('.p-size');
+    const sizeLabel = body.querySelector('.p-size-label');
+
+    let tool = 'brush';
+    let drawing = false;
+    let lastX = 0, lastY = 0;
+
+    function fit() {
+      const r = wrap.getBoundingClientRect();
+      if (r.width < 10 || r.height < 10) return;
+      const img = canvas.width > 0 ? ctx.getImageData(0, 0, canvas.width, canvas.height) : null;
+      canvas.width = Math.floor(r.width);
+      canvas.height = Math.floor(r.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (img) {
+        try { ctx.putImageData(img, 0, 0); } catch (e) {}
+      }
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    requestAnimationFrame(fit);
+
+    const ro = new ResizeObserver(() => { /* giữ đơn giản, không auto-resize */ });
+    ro.observe(wrap);
+
+    function pos(e) {
+      const r = canvas.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      drawing = true;
+      canvas.setPointerCapture(e.pointerId);
+      const p = pos(e);
+      lastX = p.x; lastY = p.y;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, (tool === 'eraser' ? +sizeInput.value * 2 : +sizeInput.value) / 2, 0, Math.PI * 2);
+      ctx.fillStyle = tool === 'eraser' ? '#ffffff' : colorInput.value;
+      ctx.fill();
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drawing) return;
+      const p = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : colorInput.value;
+      ctx.lineWidth = tool === 'eraser' ? +sizeInput.value * 2 : +sizeInput.value;
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+    });
+
+    canvas.addEventListener('pointerup', () => { drawing = false; });
+    canvas.addEventListener('pointerleave', () => { drawing = false; });
+
+    sizeInput.addEventListener('input', () => { sizeLabel.textContent = sizeInput.value + ' px'; });
+
+    body.querySelectorAll('.paint-tools .app-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const t = b.dataset.t;
+        if (t === 'brush' || t === 'eraser') {
+          tool = t;
+          body.querySelectorAll('.paint-tools .app-btn').forEach(x => x.classList.remove('primary'));
+          b.classList.add('primary');
+        } else if (t === 'clear') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } else if (t === 'save') {
+          const a = document.createElement('a');
+          a.download = 'ban-ve.png';
+          a.href = canvas.toDataURL('image/png');
+          a.click();
+          showToast('Paint', 'Đã tải xuống bản vẽ của bạn.', '💾');
+        }
+      });
+    });
+    body.querySelector('[data-t="brush"]').classList.add('primary');
+  }
+};
+
+/* ---------------- PHOTOS ---------------- */
+APPS.photos = {
+  name: 'Photos', icon: '🖼️', w: 800, h: 560,
+  build(body) {
+    body.style.overflow = 'hidden';
+    const grads = [
+      'linear-gradient(135deg,#ff9a9e,#fad0c4)',
+      'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+      'linear-gradient(135deg,#fbc2eb,#a6c1ee)',
+      'linear-gradient(135deg,#fdcbf1,#e6dee9)',
+      'linear-gradient(135deg,#84fab0,#8fd3f4)',
+      'linear-gradient(135deg,#ffecd2,#fcb69f)',
+      'linear-gradient(135deg,#667eea,#764ba2)',
+      'linear-gradient(135deg,#0f2027,#203a43)',
+      'linear-gradient(135deg,#f6d365,#fda085)',
+      'linear-gradient(135deg,#30cfd0,#330867)',
+      'linear-gradient(135deg,#ff6e7f,#bfe9ff)',
+      'linear-gradient(135deg,#c1dfc4,#deecdd)'
+    ];
+    body.innerHTML = '<div class="ph-grid"></div>';
+    const grid = body.querySelector('.ph-grid');
+    grads.forEach((g, i) => {
+      const d = document.createElement('div');
+      d.className = 'ph-item';
+      d.style.background = g;
+      d.addEventListener('click', () => {
+        const v = document.createElement('div');
+        v.className = 'ph-view';
+        v.innerHTML = '<div class="img" style="background:' + g + '"></div><button class="close">✕</button>';
+        v.querySelector('.close').addEventListener('click', () => v.remove());
+        v.addEventListener('click', (e) => { if (e.target === v) v.remove(); });
+        body.appendChild(v);
+      });
+      grid.appendChild(d);
+    });
+  }
+};
+
+/* ---------------- MINESWEEPER ---------------- */
+APPS.minesweeper = {
+  name: 'Dò mìn', icon: '💣', w: 420, h: 540,
+  build(body) {
+    const ROWS = 9, COLS = 9, MINES = 10;
+    body.innerHTML =
+      '<div class="ms">' +
+        '<div class="ms-head">' +
+          '<div class="ms-num" id="msMines">💣 10</div>' +
+          '<button class="ms-face" id="msFace">🙂</button>' +
+          '<div class="ms-num" id="msTime">⏱️ 000</div>' +
+        '</div>' +
+        '<div class="ms-board" id="msBoard"></div>' +
+      '</div>';
+
+    const boardEl = body.querySelector('#msBoard');
+    const faceEl = body.querySelector('#msFace');
+    const minesEl = body.querySelector('#msMines');
+    const timeEl = body.querySelector('#msTime');
+
+    let grid, revealed, flagged, gameOver, started, timer, seconds, flagsLeft;
+
+    boardEl.style.gridTemplateColumns = 'repeat(' + COLS + ', 32px)';
+
+    function idx(r, c) { return r * COLS + c; }
+    function inBounds(r, c) { return r >= 0 && r < ROWS && c >= 0 && c < COLS; }
+    function neighbors(r, c) {
+      const out = [];
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          if (inBounds(r + dr, c + dc)) out.push([r + dr, c + dc]);
+        }
+      return out;
+    }
+
+    function reset() {
+      clearInterval(timer);
+      seconds = 0;
+      started = false;
+      gameOver = false;
+      flagsLeft = MINES;
+      revealed = Array(ROWS * COLS).fill(false);
+      flagged = Array(ROWS * COLS).fill(false);
+      grid = Array(ROWS * COLS).fill(0);
+      faceEl.textContent = '🙂';
+      timeEl.textContent = '⏱️ 000';
+      minesEl.textContent = '💣 ' + String(flagsLeft).padStart(3, '0');
+      draw();
+    }
+
+    function placeMines(safeR, safeC) {
+      let placed = 0;
+      while (placed < MINES) {
+        const r = Math.floor(Math.random() * ROWS);
+        const c = Math.floor(Math.random() * COLS);
+        if (grid[idx(r, c)] === -1) continue;
+        if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+        grid[idx(r, c)] = -1;
+        placed++;
+      }
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[idx(r, c)] === -1) continue;
+          let n = 0;
+          neighbors(r, c).forEach(([nr, nc]) => { if (grid[idx(nr, nc)] === -1) n++; });
+          grid[idx(r, c)] = n;
+        }
+      }
+    }
+
+    function draw() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const i = idx(r, c);
+          const cell = document.createElement('div');
+          cell.className = 'ms-cell';
+          if (revealed[i]) {
+            cell.classList.add('open');
+            if (grid[i] === -1) {
+              cell.classList.add('mine');
+              cell.textContent = '💣';
+            } else if (grid[i] > 0) {
+              cell.textContent = grid[i];
+              cell.classList.add('ms-c' + grid[i]);
+            }
+          } else if (flagged[i]) {
+            cell.textContent = '🚩';
+          }
+          cell.addEventListener('click', () => reveal(r, c));
+          cell.addEventListener('contextmenu', (e) => { e.preventDefault(); flag(r, c); });
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function reveal(r, c) {
+      if (gameOver) return;
+      const i = idx(r, c);
+      if (revealed[i] || flagged[i]) return;
+
+      if (!started) {
+        started = true;
+        placeMines(r, c);
+        timer = setInterval(() => {
+          seconds = Math.min(999, seconds + 1);
+          timeEl.textContent = '⏱️ ' + String(seconds).padStart(3, '0');
+        }, 1000);
+      }
+
+      if (grid[i] === -1) {
+        revealed[i] = true;
+        gameOver = true;
+        clearInterval(timer);
+        faceEl.textContent = '😵';
+        for (let k = 0; k < ROWS * COLS; k++) if (grid[k] === -1) revealed[k] = true;
+        draw();
+        showToast('Thua rồi!', 'Bạn đã chạm phải mìn 💣', '💥');
+        return;
+      }
+
+      /* Mở lan */
+      const stack = [[r, c]];
+      while (stack.length) {
+        const [cr, cc] = stack.pop();
+        const ci = idx(cr, cc);
+        if (revealed[ci] || flagged[ci]) continue;
+        revealed[ci] = true;
+        if (grid[ci] === 0) {
+          neighbors(cr, cc).forEach(([nr, nc]) => {
+            if (!revealed[idx(nr, nc)]) stack.push([nr, nc]);
+          });
+        }
+      }
+
+      draw();
+      checkWin();
+    }
+
+    function flag(r, c) {
+      if (gameOver) return;
+      const i = idx(r, c);
+      if (revealed[i]) return;
+      if (!flagged[i] && flagsLeft <= 0) return;
+      flagged[i] = !flagged[i];
+      flagsLeft += flagged[i] ? -1 : 1;
+      minesEl.textContent = '💣 ' + String(Math.max(0, flagsLeft)).padStart(3, '0');
+      draw();
+      checkWin();
+    }
+
+    function checkWin() {
+      let openCount = 0;
+      for (let i = 0; i < ROWS * COLS; i++) if (revealed[i]) openCount++;
+      if (openCount === ROWS * COLS - MINES) {
+        gameOver = true;
+        clearInterval(timer);
+        faceEl.textContent = '😎';
+        showToast('Chiến thắng!', 'Bạn đã dọn sạch bãi mìn trong ' + seconds + ' giây.', '🏆');
+      }
+    }
+
+    faceEl.addEventListener('click', reset);
+    reset();
+  }
+};
+
+/* ---------------- SNAKE ---------------- */
+APPS.snake = {
+  name: 'Rắn săn mồi', icon: '🐍', w: 520, h: 600,
+  build(body, win) {
+    body.innerHTML =
+      '<div class="snake">' +
+        '<div class="hud"><span>Điểm: <b id="skScore">0</b></span><span>Kỷ lục: <b id="skBest">0</b></span></div>' +
+        '<canvas id="skCanvas" width="420" height="420"></canvas>' +
+        '<div style="font-size:12px;color:var(--dim)">Dùng phím ← ↑ → ↓ hoặc W A S D để di chuyển · Enter để chơi lại</div>' +
+      '</div>';
+
+    const canvas = body.querySelector('#skCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = body.querySelector('#skScore');
+    const bestEl = body.querySelector('#skBest');
+
+    const CELL = 21;
+    const COLS = 20, ROWS = 20;
+
+    let snake, dir, nextDir, food, score, running, dead, loopId;
+    let best = +(localStorage.getItem('snake_best') || 0);
+    bestEl.textContent = best;
+
+    function reset() {
+      clearInterval(loopId);
+      snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+      dir = { x: 1, y: 0 };
+      nextDir = { x: 1, y: 0 };
+      score = 0;
+      dead = false;
+      running = true;
+      scoreEl.textContent = '0';
+      placeFood();
+      draw();
+      loopId = setInterval(step, 110);
+    }
+
+    function placeFood() {
+      do {
+        food = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      } while (snake.some(s => s.x === food.x && s.y === food.y));
+    }
+
+    function step() {
+      if (!running) return;
+      dir = nextDir;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS ||
+          snake.some(s => s.x === head.x && s.y === head.y)) {
+        running = false;
+        dead = true;
+        clearInterval(loopId);
+        draw();
+        if (score > best) {
+          best = score;
+          localStorage.setItem('snake_best', best);
+          bestEl.textContent = best;
+        }
+        showToast('Game Over', 'Điểm của bạn: ' + score, '🐍');
+        return;
+      }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreEl.textContent = score;
+        placeFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0b1220';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      /* Lưới mờ */
+      ctx.strokeStyle = 'rgba(255,255,255,.04)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= COLS; i++) {
+        ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, ROWS * CELL); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(COLS * CELL, i * CELL); ctx.stroke();
+      }
+
+      /* Mồi */
+      ctx.fillStyle = '#e81123';
+      ctx.beginPath();
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      /* Rắn */
+      snake.forEach((s, i) => {
+        const t = i / Math.max(1, snake.length - 1);
+        ctx.fillStyle = i === 0 ? '#4cc2ff' : 'hsl(' + (200 - t * 40) + ',80%,' + (60 - t * 20) + '%)';
+        const pad = i === 0 ? 1 : 2;
+        roundRect(ctx, s.x * CELL + pad, s.y * CELL + pad, CELL - pad * 2, CELL - pad * 2, 5);
+        ctx.fill();
+      });
+
+      /* Mắt */
+      if (snake.length) {
+        const h = snake[0];
+        ctx.fillStyle = '#0b1220';
+        const cx = h.x * CELL + CELL / 2, cy = h.y * CELL + CELL / 2;
+        const ox = dir.x * 4, oy = dir.y * 4;
+        const px = dir.x === 0 ? 4 : 0, py = dir.y === 0 ? 4 : 0;
+        ctx.beginPath(); ctx.arc(cx + ox - px, cy + oy - py, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + ox + px, cy + oy + py, 2, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (dead) {
+        ctx.fillStyle = 'rgba(0,0,0,.65)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '600 26px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = '15px Segoe UI, sans-serif';
+        ctx.fillStyle = '#a8b6cc';
+        ctx.fillText('Nhấn Enter để chơi lại', canvas.width / 2, canvas.height / 2 + 26);
+      }
+    }
+
+    function roundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function setDir(nx, ny) {
+      if (!running) return;
+      if (nx === -dir.x && ny === -dir.y) return;
+      nextDir = { x: nx, y: ny };
+    }
+
+    document.addEventListener('keydown', function handler(e) {
+      if (!document.body.contains(body)) { document.removeEventListener('keydown', handler); return; }
+      if (state.activeId !== win.id) return;
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup' || k === 'w') { e.preventDefault(); setDir(0, -1); }
+      else if (k === 'arrowdown' || k === 's') { e.preventDefault(); setDir(0, 1); }
+      else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); setDir(-1, 0); }
+      else if (k === 'arrowright' || k === 'd') { e.preventDefault(); setDir(1, 0); }
+      else if (k === 'enter' && dead) { reset(); }
+    });
+
+    reset();
+  }
+};
+
+/* ---------------- MUSIC ---------------- */
+APPS.music = {
+  name: 'Âm nhạc', icon: '🎵', w: 460, h: 620,
+  build(body) {
+    const tracks = [
+      { name: 'Ánh Bình Minh', artist: 'Nova Sound', dur: 214, grad: 'linear-gradient(135deg,#667eea,#764ba2)' },
+      { name: 'Đêm Sài Gòn', artist: 'Saigon Beats', dur: 187, grad: 'linear-gradient(135deg,#f093fb,#f5576c)' },
+      { name: 'Hành Trình', artist: 'The Voyagers', dur: 256, grad: 'linear-gradient(135deg,#4facfe,#00f2fe)' },
+      { name: 'Mưa Đầu Mùa', artist: 'Lofi Vietnam', dur: 198, grad: 'linear-gradient(135deg,#43e97b,#38f9d7)' },
+      { name: 'Tĩnh Lặng', artist: 'Zen Mode', dur: 302, grad: 'linear-gradient(135deg,#fa709a,#fee140)' }
+    ];
+
+    let current = 0;
+    let playing = false;
+    let pos = 0;
+    let timer = null;
+
+    body.innerHTML =
+      '<div class="mu">' +
+        '<div class="mu-art" id="muArt">🎵</div>' +
+        '<div class="mu-info"><b id="muName">—</b><span id="muArtist">—</span></div>' +
+        '<div>' +
+          '<div class="mu-bar" id="muBar"><i id="muFill"></i></div>' +
+          '<div class="mu-time"><span id="muCur">0:00</span><span id="muDur">0:00</span></div>' +
+        '</div>' +
+        '<div class="mu-ctrl">' +
+          '<button id="muPrev">⏮</button>' +
+          '<button id="muPlay" class="play">▶</button>' +
+          '<button id="muNext">⏭</button>' +
+        '</div>' +
+        '<div class="mu-list" id="muList"></div>' +
+      '</div>';
+
+    const art = body.querySelector('#muArt');
+    const nameEl = body.querySelector('#muName');
+    const artistEl = body.querySelector('#muArtist');
+    const fill = body.querySelector('#muFill');
+    const curEl = body.querySelector('#muCur');
+    const durEl = body.querySelector('#muDur');
+    const listEl = body.querySelector('#muList');
+    const playBtn = body.querySelector('#muPlay');
+
+    function fmt(s) {
+      return Math.floor(s / 60) + ':' + pad(Math.floor(s % 60));
+    }
+
+    function load(i) {
+      current = (i + tracks.length) % tracks.length;
+      const t = tracks[current];
+      pos = 0;
+      nameEl.textContent = t.name;
+      artistEl.textContent = t.artist;
+      art.style.background = t.grad;
+      durEl.textContent = fmt(t.dur);
+      curEl.textContent = '0:00';
+      fill.style.width = '0%';
+      renderList();
+    }
+
+    function renderList() {
+      listEl.innerHTML = '';
+      tracks.forEach((t, i) => {
+        const b = document.createElement('button');
+        b.className = 'mu-track' + (i === current ? ' on' : '');
+        b.innerHTML = '<span>' + (i === current && playing ? '🔊' : '🎵') + '</span>' +
+                      '<span>' + esc(t.name) + '</span>' +
+                      '<span class="n">' + fmt(t.dur) + '</span>';
+        b.addEventListener('click', () => { load(i); play(); });
+        listEl.appendChild(b);
+      });
+    }
+
+    function play() {
+      playing = true;
+      playBtn.textContent = '⏸';
+      art.style.animation = 'none';
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (!playing) return;
+        pos += 0.25;
+        const t = tracks[current];
+        if (pos >= t.dur) { next(); return; }
+        fill.style.width = (pos / t.dur * 100) + '%';
+        curEl.textContent = fmt(pos);
+      }, 250);
+      renderList();
+    }
+
+    function pause() {
+      playing = false;
+      playBtn.textContent = '▶';
+      clearInterval(timer);
+      renderList();
+    }
+
+    function next() { load(current + 1); if (playing) play(); }
+    function prev() { load(current - 1); if (playing) play(); }
+
+    playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+    body.querySelector('#muNext').addEventListener('click', next);
+    body.querySelector('#muPrev').addEventListener('click', prev);
+
+    body.querySelector('#muBar').addEventListener('click', (e) => {
+      const r = e.currentTarget.getBoundingClientRect();
+      const p = (e.clientX - r.left) / r.width;
+      pos = p * tracks[current].dur;
+      fill.style.width = (p * 100) + '%';
+      curEl.textContent = fmt(pos);
+    });
+
+    load(0);
+  }
+};
+
+/* ---------------- BROWSER ---------------- */
+APPS.browser = {
+  name: 'Trình duyệt', icon: '🌐', w: 980, h: 660,
+  build(body) {
+    body.style.overflow = 'hidden';
+    body.innerHTML =
+      '<div class="br">' +
+        '<div class="br-bar">' +
+          '<button id="brBack">‹</button>' +
+          '<button id="brFwd">›</button>' +
+          '<button id="brReload">⟳</button>' +
+          '<input class="br-url" id="brUrl" value="home://start" spellcheck="false" />' +
+          '<button id="brGo">→</button>' +
+        '</div>' +
+        '<iframe id="brFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>' +
+      '</div>';
+
+    const frame = body.querySelector('#brFrame');
+    const urlInput = body.querySelector('#brUrl');
+
+    const HOME_HTML =
+      '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><style>' +
+      '*{box-sizing:border-box;margin:0;padding:0}' +
+      'body{font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at 30% 20%,#152a4a,#070d18 70%);color:#e6edf7;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}' +
+      'h1{font-size:46px;font-weight:700;background:linear-gradient(90deg,#4cc2ff,#a855f7);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-1px}' +
+      'p{color:#8ea3bf;font-size:14px}' +
+      '.box{display:flex;gap:10px;width:min(600px,84%)}' +
+      'input{flex:1;padding:15px 22px;border-radius:26px;border:1px solid #22344f;background:#101a2c;color:#e6edf7;font-size:15px;outline:none;font-family:inherit}' +
+      'input:focus{border-color:#4cc2ff;box-shadow:0 0 0 3px rgba(76,194,255,.15)}' +
+      'button{padding:15px 28px;border-radius:26px;border:none;background:linear-gradient(135deg,#0078d4,#4cc2ff);color:#fff;font-size:15px;cursor:pointer;font-weight:600}' +
+      '.links{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:min(600px,84%)}' +
+      '.links a{color:#9ecbff;text-decoration:none;padding:11px 18px;border:1px solid #22344f;border-radius:11px;font-size:13.5px;background:#0e1727;cursor:pointer}' +
+      '.links a:hover{border-color:#4cc2ff;background:#132038}' +
+      '</style></head><body>' +
+      '<h1>Trình duyệt Web</h1>' +
+      '<p>Nhập địa chỉ hoặc tìm kiếm trên web</p>' +
+      '<div class="box"><input id="q" placeholder="Tìm kiếm hoặc nhập URL..." /><button onclick="go()">Tìm</button></div>' +
+      '<div class="links">' +
+      '<a onclick="nav(\'https://example.com\')">example.com</a>' +
+      '<a onclick="nav(\'https://developer.mozilla.org\')">MDN Web Docs</a>' +
+      '<a onclick="nav(\'https://vi.wikipedia.org\')">Wikipedia</a>' +
+      '<a onclick="nav(\'https://openai.com\')">OpenAI</a>' +
+      '</div>' +
+      '<script>' +
+      'function go(){var v=document.getElementById("q").value.trim();if(!v)return;if(/^https?:\\/\\//.test(v)||/^[\\w-]+\\.[a-z]{2,}/i.test(v)){nav(v.indexOf("http")===0?v:"https://"+v)}else{parent.postMessage({type:"search",q:v},"*")}}' +
+      'function nav(u){parent.postMessage({type:"nav",url:u},"*")}' +
+      'document.getElementById("q").addEventListener("keydown",function(e){if(e.key==="Enter")go()});' +
+      '<\/script></body></html>';
+
+    function searchHTML(q) {
+      return '<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><style>' +
+      'body{font-family:"Segoe UI",sans-serif;background:#0b1220;color:#dbe6f5;margin:0;padding:34px 44px}' +
+      'h2{font-size:18px;font-weight:600;margin-bottom:22px;color:#8ea3bf}' +
+      'h2 b{color:#fff}' +
+      '.r{margin-bottom:26px;max-width:660px}' +
+      '.r a{color:#7cc4ff;font-size:17px;text-decoration:none;display:block;margin-bottom:4px}' +
+      '.r .u{color:#5f7d9e;font-size:12.5px;margin-bottom:5px}' +
+      '.r p{color:#a9bdd6;font-size:13.5px;line-height:1.55;margin:0}' +
+      '</style></head><body>' +
+      '<h2>Khoảng 1.240.000 kết quả cho <b>' + q.replace(/[<>&]/g, '') + '</b></h2>' +
+      '<div class="r"><a>Wikipedia — ' + q.replace(/[<>&]/g, '') + '</a><div class="u">https://vi.wikipedia.org/wiki/' + encodeURIComponent(q) + '</div><p>Bài viết bách khoa toàn thư mở về chủ đề này, tổng hợp thông tin, lịch sử và các khía cạnh liên quan.</p></div>' +
+      '<div class="r"><a>Hướng dẫn toàn tập về ' + q.replace(/[<>&]/g, '') + '</a><div class="u">https://example.com/huong-dan</div><p>Bài viết chi tiết hướng dẫn từng bước, kèm ví dụ minh hoạ và các lưu ý quan trọng.</p></div>' +
+      '<div class="r"><a>' + q.replace(/[<>&]/g, '') + ' — Diễn đàn thảo luận</a><div class="u">https://forum.example.org/t/' + encodeURIComponent(q) + '</div><p>Hàng trăm câu trả lời từ cộng đồng, chia sẻ kinh nghiệm thực tế và các giải pháp hữu ích.</p></div>' +
+      '</body></html>';
+    }
+
+    const historyStack = [];
+    let hIndex = -1;
+
+    function setFrame(html) {
+      frame.removeAttribute('src');
+      frame.srcdoc = html;
+    }
+
+    function loadUrl(url, addHistory = true) {
+      urlInput.value = url;
+      if (addHistory) {
+        historyStack.splice(hIndex + 1);
+        historyStack.push(url);
+        hIndex = historyStack.length - 1;
+      }
+      if (url === 'home://start') {
+        setFrame(HOME_HTML);
+      } else if (url.startsWith('search://')) {
+        setFrame(searchHTML(decodeURIComponent(url.slice(9))));
+      } else if (/^https?:\/\//.test(url)) {
+        frame.removeAttribute('srcdoc');
+        frame.src = url;
+      } else {
+        setFrame(HOME_HTML);
+      }
+    }
+
+    window.addEventListener('message', (e) => {
+      if (!e.data) return;
+      if (e.data.type === 'nav') loadUrl(e.data.url);
+      if (e.data.type === 'search') loadUrl('search://' + encodeURIComponent(e.data.q));
+    });
+
+    body.querySelector('#brGo').addEventListener('click', () => {
+      const v = urlInput.value.trim();
+      if (!v) return;
+      if (/^https?:\/\//.test(v)) loadUrl(v);
+      else if (/^[\w-]+\.[a-z]{2,}/i.test(v)) loadUrl('https://' + v);
+      else loadUrl('search://' + encodeURIComponent(v));
+    });
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') body.querySelector('#brGo').click();
+    });
+    body.querySelector('#brReload').addEventListener('click', () => loadUrl(urlInput.value, false));
+    body.querySelector('#brBack').addEventListener('click', () => {
+      if (hIndex > 0) { hIndex--; loadUrl(historyStack[hIndex], false); }
+    });
+    body.querySelector('#brFwd').addEventListener('click', () => {
+      if (hIndex < historyStack.length - 1) { hIndex++; loadUrl(historyStack[hIndex], false); }
+    });
+
+    loadUrl('home://start');
+  }
+};
+
+/* ---------------- TASK MANAGER ---------------- */
+APPS.taskmgr = {
+  name: 'Task Manager', icon: '📊', w: 760, h: 520,
+  build(body, win) {
+    body.innerHTML =
+      '<div class="tm">' +
+        '<div class="tm-head"><div>Ứng dụng</div><div>CPU</div><div>RAM</div><div></div></div>' +
+        '<div id="tmRows" style="flex:1;overflow-y:auto"></div>' +
+        '<div style="padding:10px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--dim)" id="tmFoot"></div>' +
+      '</div>';
+
+    const rowsEl = body.querySelector('#tmRows');
+    const footEl = body.querySelector('#tmFoot');
+    let timer;
+
+    function render() {
+      rowsEl.innerHTML = '';
+      if (wins.size === 0) {
+        rowsEl.innerHTML = '<div class="empty-state" style="height:220px"><div class="big">📊</div>Không có tiến trình nào đang chạy</div>';
+      }
+      let totalCpu = 0, totalRam = 0;
+      wins.forEach(w => {
+        const app = APPS[w.appId];
+        const cpu = (Math.random() * 6 + 0.5);
+        const ram = (Math.random() * 90 + 30);
+        totalCpu += cpu;
+        totalRam += ram;
+
+        const row = document.createElement('div');
+        row.className = 'tm-row';
+        row.innerHTML =
+          '<div class="nm">' + app.icon + ' ' + esc(app.name) + (state.activeId === w.id ? ' <span style="color:var(--accent);font-size:10px">●</span>' : '') + '</div>' +
+          '<div>' + cpu.toFixed(1) + '%<div class="tm-bar"><i style="width:' + Math.min(100, cpu * 8) + '%"></i></div></div>' +
+          '<div>' + ram.toFixed(1) + ' MB<div class="tm-bar"><i style="width:' + Math.min(100, ram / 2) + '%"></i></div></div>' +
+          '<div><button class="end">Kết thúc</button></div>';
+        row.querySelector('.end').addEventListener('click', () => {
+          closeWin(w.id);
+          render();
+        });
+        rowsEl.appendChild(row);
+      });
+
+      footEl.textContent = 'Tiến trình: ' + wins.size +
+        '  ·  CPU tổng: ' + totalCpu.toFixed(1) + '%' +
+        '  ·  RAM tổng: ' + (totalRam / 1024).toFixed(2) + ' GB';
+    }
+
+    render();
+    timer = setInterval(() => {
+      if (!document.body.contains(body)) { clearInterval(timer); return; }
+      render();
+    }, 2000);
+  }
+};
+
+/* ---------------- CLOCK ---------------- */
+APPS.clock = {
+  name: 'Đồng hồ', icon: '🕐', w: 400, h: 520,
+  build(body) {
+    body.innerHTML =
+      '<div class="ck">' +
+        '<canvas id="ckCanvas" width="220" height="220"></canvas>' +
+        '<div class="dig" id="ckDig">--:--:--</div>' +
+        '<div class="dt" id="ckDate">—</div>' +
+        '<div class="world" id="ckWorld"></div>' +
+      '</div>';
+
+    const canvas = body.querySelector('#ckCanvas');
+    const ctx = canvas.getContext('2d');
+    const dig = body.querySelector('#ckDig');
+    const dt = body.querySelector('#ckDate');
+    const world = body.querySelector('#ckWorld');
+
+    const zones = [
+      { n: 'Hà Nội', tz: 'Asia/Ho_Chi_Minh' },
+      { n: 'Tokyo', tz: 'Asia/Tokyo' },
+      { n: 'London', tz: 'Europe/London' },
+      { n: 'New York', tz: 'America/New_York' }
+    ];
+
+    function drawClock() {
+      const d = new Date();
+      const W = 220, C = W / 2, R = C - 10;
+
+      ctx.clearRect(0, 0, W, W);
+      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--win2') || '#efefef';
+      ctx.beginPath();
+      ctx.arc(C, C, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(128,128,128,.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(C, C, R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      /* Vạch chia */
+      for (let i = 0; i < 60; i++) {
+        const a = (i / 60) * Math.PI * 2 - Math.PI / 2;
+        const inner = i % 5 === 0 ? R - 14 : R - 7;
+        ctx.beginPath();
+        ctx.moveTo(C + Math.cos(a) * inner, C + Math.sin(a) * inner);
+        ctx.lineTo(C + Math.cos(a) * (R - 3), C + Math.sin(a) * (R - 3));
+        ctx.strokeStyle = i % 5 === 0 ? '#0078d4' : 'rgba(128,128,128,.35)';
+        ctx.lineWidth = i % 5 === 0 ? 2.5 : 1;
+        ctx.stroke();
+      }
+
+      const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0078d4';
+      const txtCol = getComputedStyle(document.body).getPropertyValue('--text').trim() || '#1b1b1b';
+
+      function hand(angle, len, width, color) {
+        ctx.beginPath();
+        ctx.moveTo(C, C);
+        ctx.lineTo(C + Math.cos(angle) * len, C + Math.sin(angle) * len);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      const h = d.getHours() % 12, m = d.getMinutes(), s = d.getSeconds();
+      hand((h / 12 + m / 720) * Math.PI * 2 - Math.PI / 2, R * 0.5, 5, txtCol);
+      hand((m / 60 + s / 3600) * Math.PI * 2 - Math.PI / 2, R * 0.72, 3.5, txtCol);
+      hand((s / 60) * Math.PI * 2 - Math.PI / 2, R * 0.82, 1.8, acc);
+
+      ctx.beginPath();
+      ctx.arc(C, C, 5, 0, Math.PI * 2);
+      ctx.fillStyle = acc;
+      ctx.fill();
+
+      dig.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+      const days = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+      dt.textContent = days[d.getDay()] + ', ' + d.getDate() + ' tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+
+      world.innerHTML = '';
+      zones.forEach(z => {
+        let timeStr = '--:--';
+        try {
+          timeStr = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: z.tz }).format(d);
+        } catch (e) {}
+        const el = document.createElement('div');
+        el.innerHTML = '<b>' + timeStr + '</b><span>' + z.n + '</span>';
+        world.appendChild(el);
+      });
+    }
+
+    drawClock();
+    const t = setInterval(() => {
+      if (!document.body.contains(body)) { clearInterval(t); return; }
+      drawClock();
+    }, 1000);
+  }
+};
+
+/* ---------------- RECYCLE BIN ---------------- */
+APPS.recycle = {
+  name: 'Thùng rác', icon: '🗑️', w: 720, h: 460,
+  build(body) {
+    body.innerHTML =
+      '<div class="app-toolbar">' +
+        '<button class="app-btn">🗑️ Dọn thùng rác</button>' +
+        '<button class="app-btn">♻️ Khôi phục tất cả</button>' +
+      '</div>' +
+      '<div class="empty-state" style="height:calc(100% - 45px)">' +
+        '<div class="big">🗑️</div>' +
+        '<div style="font-size:15px;font-weight:600;color:var(--text)">Thùng rác trống</div>' +
+        '<div>Không có tệp nào trong thùng rác</div>' +
+      '</div>';
+  }
+};
+
+/* ============================================================
+   13. KHỞI TẠO
+   ============================================================ */
+function init() {
+  applyTheme();
+  applyWallpaper();
+  renderDesktopIcons();
+  renderStart();
+  renderQuick();
+  renderCalendar();
+  renderTaskbar();
+
+  /* Phím tắt toàn cục */
+  document.addEventListener('keydown', (e) => {
+    if ($('#lock').style.display === 'none' || $('#lock').classList.contains('hide')) {
+      /* Meta / Windows key */
+      if (e.key === 'Meta' || e.key === 'OS') {
+        e.preventDefault();
+        toggleStart();
+      }
+      if (e.key === 'Escape') {
+        closeStart();
+        closePanels();
+        hideContextMenu();
+      }
+      /* Alt + F4 → đóng cửa sổ đang focus */
+      if (e.altKey && e.key === 'F4' && state.activeId) {
+        e.preventDefault();
+        closeWin(state.activeId);
+      }
+    }
+  });
+
+  /* Cập nhật taskbar định kỳ (cho chỉ báo đang chạy) */
+  setInterval(renderTaskbar, 1500);
+}
+
+window.addEventListener('load', init);
+
+/* Re-render khi resize màn hình */
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    wins.forEach(w => {
+      if (w.maximized || w.snapped) {
+        const DW = desktopEl.clientWidth, DH = desktopEl.clientHeight;
+        if (w.maximized) {
+          w.el.style.width = DW + 'px';
+          w.el.style.height = DH + 'px';
+        }
+      } else {
+        /* Giữ cửa sổ trong màn hình */
+        const l = parseFloat(w.el.style.left) || 0;
+        const t = parseFloat(w.el.style.top) || 0;
+        if (l > desktopEl.clientWidth - 100) w.el.style.left = Math.max(0, desktopEl.clientWidth - w.el.offsetWidth) + 'px';
+        if (t > desktopEl.clientHeight - 60) w.el.style.top = Math.max(0, desktopEl.clientHeight - w.el.offsetHeight) + 'px';
+      }
+    });
+  }, 120);
+});
 </script>
 </body>
 </html>
