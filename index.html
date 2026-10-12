@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2910/2910760.png">
     <title>Ôn Tập Giữa Kì 1 - Hóa Học 11</title>
     <style>
         :root {
@@ -21,6 +24,7 @@
             line-height: 1.6;
             margin: 0;
             padding: 20px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .container {
@@ -1599,6 +1603,7 @@
 </div>
 
 <script>
+    // ====== LOGIC CHẤM ĐIỂM ======
     function submitQuiz() {
         let score = 0;
         let totalQuestions = 0;
@@ -1608,7 +1613,6 @@
             totalQuestions++;
             const type = q.getAttribute('data-type');
             
-            // Reset viền và giải thích cũ
             q.classList.remove('correct-answer', 'wrong-answer');
             const existingExplanation = q.querySelector('.explanation');
             if (existingExplanation) existingExplanation.remove();
@@ -1639,7 +1643,7 @@
                     const selected = row.querySelector('input[type="radio"]:checked');
                     const correctRadio = row.querySelector('input[data-correct]');
                     const correctValue = correctRadio.getAttribute('data-correct');
-                    const label = row.querySelector('p').innerText.charAt(0); // Lấy a, b, c, d
+                    const label = row.querySelector('p').innerText.charAt(0);
                     
                     correctAnswers.push(`${label}) ${correctValue}`);
                     
@@ -1683,7 +1687,6 @@
             resultDiv.style.color = '#664d03';
         }
 
-        // Cuộn xuống phần kết quả
         resultDiv.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -1692,6 +1695,19 @@
         div.className = 'explanation';
         div.innerText = text;
         parent.appendChild(div);
+    }
+
+    // ====== ĐĂNG KÝ SERVICE WORKER ĐỂ CHẠY OFFLINE ======
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('Service Worker đã đăng ký thành công:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Đăng ký Service Worker thất bại:', error);
+                });
+        });
     }
 </script>
 
